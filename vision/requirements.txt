@@ -1,0 +1,4 @@
+# Moteur de vision : seul le suivi demande ultralytics (YOLO + ByteTrack, avec OpenCV et PyTorch).
+# La géométrie et le client de l'API n'ont besoin que de requests.
+requests>=2.31
+ultralytics>=8.3

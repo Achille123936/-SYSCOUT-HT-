@@ -1,0 +1,11 @@
+Django>=5.0,<5.2
+djangorestframework>=3.15
+django-cors-headers>=4.4
+reportlab>=4.2
+Pillow>=10
+# Temps réel : WebSocket du suivi en direct (Daphne sert aussi `runserver` en ASGI)
+channels>=4.1,<5
+daphne>=4.1,<5
+# Plusieurs processus serveur (production) : channels-redis>=4.2 et SYSCOUT_REDIS_URL
+# PostgreSQL (voir SEL 2.1)
+psycopg[binary]>=3.2

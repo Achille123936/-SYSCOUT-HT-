@@ -1,0 +1,15 @@
+# secrets et environnements
+.env
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+
+# bases, médias et sauvegardes locales
+db.sqlite3
+backend/media/
+backend/sauvegardes/
+
+# builds et caches Expo
+syscout-ht/dist/
+syscout-ht/.expo/
