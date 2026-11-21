@@ -5,18 +5,25 @@ import { LIGNES_STATS, dateFR, nombre } from '../lib/format';
 import { useChargement } from '../lib/hooks';
 import Radar from '../components/Radar';
 import { Chaleur, Terrain, grilleDesActions } from '../components/Terrain';
+import { useAuth } from '../lib/auth';
+import Modal from '../components/Modal';
 import { Alerte, Badge, Bouton, Card, Etat, Titre } from '../components/ui';
 
 // Fiche joueur : statistiques de la saison, radar des centiles, carte des actions, historique des clubs.
 export default function JoueurDetail() {
   const { id } = useParams();
+  const { a } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
+  const [listes, setListes] = useState<any[] | null>(null);
+  const [ajoute, setAjoute] = useState<string | null>(null);
   const t = useChargement<any>(() => api.get(`/joueurs/${id}/radar/`), [id]);
   const carte = useChargement<any>(() => api.get(`/joueurs/${id}/carte/`), [id]);
   const journal = useChargement<any>(() => api.get(`/joueurs/${id}/matchs/`), [id]);
   const d = t.donnees, j = d?.joueur, s = d?.statistique;
   const { grille, maximum } = grilleDesActions(carte.donnees?.actions || []);
 
+  const ouvrirListes = async () => { setAjoute(null); try { setListes(await api.tout('/shortlists/')); } catch (e) { setMessage((e as Error).message); } };
+  const ajouter = async (l: any) => { try { await api.post(`/shortlists/${l.id}/ajouter/`, { joueur: Number(id) }); setAjoute(`Ajouté à « ${l.nom} ».`); } catch (e) { setMessage((e as Error).message); } };
   const exporter = async () => { try { await exporterPdf({ type: 'joueur', id: Number(id) }); } catch (e) { setMessage((e as Error).message); } };
 
   return (
@@ -24,7 +31,7 @@ export default function JoueurDetail() {
       {d ? (
         <>
           <Titre titre={j.nom_complet} sous={`${j.poste_libelle} · ${j.club_nom} · ${j.age} ans${d.saison ? ` · saison ${d.saison.libelle}` : ''}`}
-            droite={<div className="flex gap-2"><Link to={`/app/comparaison?ids=${j.id}`}><Bouton genre="secondaire">Comparer</Bouton></Link><Bouton onClick={exporter}>Exporter en PDF</Bouton></div>} />
+            droite={<div className="flex flex-wrap gap-2"><Link to={`/app/comparaison?ids=${j.id}`}><Bouton genre="secondaire">Comparer</Bouton></Link>{a('ADMIN', 'SCOUT', 'DIRECTEUR', 'CLIENT', 'CLUB_ADMIN', 'COACH') ? <Bouton genre="secondaire" onClick={ouvrirListes}>+ Shortlist</Bouton> : null}{a('ADMIN', 'ANALYSTE', 'CLUB_ADMIN') ? <Link to={`/app/joueurs/${j.id}/modifier`}><Bouton genre="secondaire">Modifier</Bouton></Link> : null}<Bouton onClick={exporter}>Exporter en PDF</Bouton></div>} />
           <div className="space-y-6">
             <Alerte ton="rouge">{message}</Alerte>
             <div className="grid gap-6 lg:grid-cols-3">
@@ -70,6 +77,11 @@ export default function JoueurDetail() {
               </Card>
             </div>
           </div>
+          <Modal titre="Ajouter à une shortlist" ouvert={listes !== null} onFermer={() => setListes(null)}>
+            {ajoute ? <Alerte ton="vert">{ajoute}</Alerte> : null}
+            <ul className="divide-y divide-slate-100 text-sm">{(listes || []).map((l) => <li key={l.id}><button className="flex w-full justify-between py-2 text-left hover:bg-slate-50" onClick={() => ajouter(l)}><span className="font-medium">{l.nom}</span><span className="text-slate-400">{l.nb_joueurs} joueur(s)</span></button></li>)}</ul>
+            {listes && !listes.length ? <p className="text-sm text-slate-500">Aucune shortlist : créez-en une depuis la page Shortlists.</p> : null}
+          </Modal>
         </>
       ) : null}
     </Etat>

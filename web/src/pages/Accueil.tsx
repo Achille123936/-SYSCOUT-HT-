@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useChargement } from '../lib/hooks';
 import MatchsEnDirect from '../components/MatchsEnDirect';
+import fond from '../assets/accueil-fond.jpg';
 
 const FONCTIONS: [string, string][] = [
   ['Codage vidéo', "Chaque action du match, codée action par action : type, joueur, zone du terrain, départ et arrivée des passes."],
@@ -22,6 +23,11 @@ export default function Accueil() {
 
   return (
     <div className="min-h-screen bg-navy text-white">
+
+      <section className="relative isolate overflow-hidden">
+        <img src={fond} alt="" aria-hidden="true" className="absolute inset-0 -z-20 h-full w-full object-cover object-center" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-navy via-navy/85 to-navy/40" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-24 bg-gradient-to-t from-navy to-transparent" />
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <span className="text-lg font-extrabold">SYSCOUT<span className="text-brand-green">-HT</span></span>
         <nav className="flex items-center gap-3 text-sm">
@@ -30,8 +36,7 @@ export default function Accueil() {
             : <Link className="rounded-lg bg-brand-green px-4 py-2 font-semibold text-white" to="/connexion">Se connecter</Link>}
         </nav>
       </header>
-
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-10">
+      <div className="mx-auto max-w-6xl px-5 pb-14 pt-10">
         <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs">
           <span className="h-2 w-2 rounded-full bg-brand-green" />Ligue Haïtienne{c?.saison ? ` · saison ${c.saison}` : ''}
         </p>
@@ -45,6 +50,7 @@ export default function Accueil() {
               <div key={String(nom)}><p className="text-3xl font-extrabold">{String(v)}</p><p className="text-sm text-white/60">{nom}</p></div>
             ))}
         </div>
+      </div>
       </section>
 
       <section className="border-y border-white/10 bg-white/[0.03] py-10">

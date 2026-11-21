@@ -16,23 +16,32 @@ Autre serveur : `VITE_API_URL=https://syscout-api.onrender.com npm run build` (v
 (GitHub Pages) : `VITE_BASE=/nom-du-depot/`. Comptes de démonstration (mot de passe `Syscout2026`) : `admin`, `jpierre`
 (analyste), `mlindor` (scout), `dsportif`, `coach_ej`.
 
-## Pages déjà faites
+## Pages (toutes branchées sur l'API Django, droits par rôle comme l'application mobile)
 
-| Route | Contenu | API |
-| --- | --- | --- |
-| `/` | accueil public : chiffres, matchs en direct, offres | `/chiffres-publics/`, `/matchs-en-direct/`, `/formules-publiques/` |
-| `/connexion` | connexion, « rester connecté », session fermée après inactivité | `/auth/connexion/`, `/auth/moi/` |
-| `/app` | tableau de bord par rôle, matchs en direct | `/tableau-de-bord/` |
-| `/app/joueurs`, `/app/joueurs/:id` | recherche multicritère, fiche (statistiques, radar des centiles, carte des actions, historique, PDF) | `/joueurs/…` |
-| `/app/comparaison?ids=1,2,3` | de 2 à 5 joueurs, radar, tableau, avertissement sous 450 minutes, PDF | `/joueurs/comparer/` |
-| `/app/matchs`, `/app/matchs/:id` | liste filtrée, fiche et compositions | `/matchs/` |
-| `/app/matchs/:id/direct` | direct en WebSocket (secours : relecture toutes les 5 s) | `/ws/matches/{id}/live/`, `/matchs/{id}/direct/` |
-| `/app/matchs/:id/pistes-ia` | heatmap des pistes de l'IA, identification d'une piste à un joueur | `/pistes-ia/…` |
-| `/app/cameras` | état des caméras, vérification | `/cameras/` |
+| Route | Contenu |
+| --- | --- |
+| `/`, `/connexion`, `/inscription` | accueil public (matchs en direct, offres), connexion, demande d'inscription |
+| `/app` | tableau de bord par rôle, matchs en direct |
+| `/app/joueurs`, `/:id`, `/nouveau`, `/:id/modifier` | recherche multicritère, fiche (statistiques, radar, carte, historique, PDF, shortlist), formulaire (mineur : tuteur et accord écrit en fichier) |
+| `/app/comparaison` | de 2 à 5 joueurs, radar, avertissement sous 450 minutes, PDF |
+| `/app/matchs`, `/:id`, `/nouveau`, `/:id/modifier` | liste, fiche, formulaire avec compositions et adresse de la vidéo, correction, annulation |
+| `/app/matchs/:id/codage` | codage vidéo : verrou renouvelé, action au clic sur le terrain (passes : départ et arrivée), file locale et clé d'idempotence, validation du match |
+| `/app/matchs/:id/relecture` | vidéo, actions filtrées, playlists |
+| `/app/matchs/:id/direct` | direct en WebSocket (secours : relecture toutes les 5 s) |
+| `/app/matchs/:id/tactique` | zones, positions moyennes, formation, bloc, pressing, transitions, avertissements |
+| `/app/matchs/:id/verification-ia`, `/pistes-ia` | confirmer, corriger ou rejeter les propositions de l'IA ; heatmap et identification des pistes |
+| `/app/matchs/:id/physique` | données physiques (lecture, saisie manuelle) |
+| `/app/classements`, `/championnat`, `/equipe`, `/assistant`, `/apprentissage` | statistiques par poste, classement des équipes, tableau de l'entraîneur, assistant, joueurs similaires / profils / xG |
+| `/app/rapports`, `/shortlists` | rapports de scouting (brouillon, soumission, validation, PDF), listes de joueurs |
+| `/app/clubs`, `/competitions`, `/cameras`, `/abonnements` | référentiel, caméras, abonnements, factures et paiements |
+| `/app/utilisateurs`, `/audit`, `/compte` | comptes et droits, journal et sauvegardes, mot de passe |
 
-## Reste à faire (présent dans l'application mobile)
+## Pas encore repris de l'application mobile
 
-Codage vidéo et télestration, relecture et clips, analyse tactique, vérification des propositions de l'IA, capteur GPS et
-données physiques, classements et championnat, rapports de scouting et shortlists, clubs, compétitions et saisons,
-abonnements, factures et paiements, administration (utilisateurs, journal, sauvegarde), « Mon équipe » et assistant,
-apprentissage (joueurs similaires, profils, xG), formulaire de joueur et de match, inscription, mot de passe.
+La **télestration** (dessins et mesures posés sur la vidéo), le **capteur GPS** du téléphone (`CapteurScreen`, propre à
+l'appareil porté par le joueur), le **suivi vidéo d'un joueur** (trajet converti en mètres) et la **calibration d'une
+caméra** (formulaire des 4 coins) ; la création et la modification d'une caméra. Les vidéos en flux HLS exigent un
+navigateur qui les lit (Safari) : un flux RTSP doit d'abord être converti en HLS (voir `../vision/README.md`).
+
+Ces pages ont été vérifiées par le compilateur TypeScript, la construction Vite et des appels réels à l'API avec leurs
+vraies charges utiles ; elles n'ont pas été parcourues à la main dans un navigateur.

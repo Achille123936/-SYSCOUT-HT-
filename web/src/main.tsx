@@ -15,6 +15,22 @@ import MatchDetail from './pages/MatchDetail';
 import Direct from './pages/Direct';
 import PistesIA from './pages/PistesIA';
 import Cameras from './pages/Cameras';
+import Tactique from './pages/Tactique';
+import VerificationIA from './pages/VerificationIA';
+import Codage from './pages/Codage';
+import Relecture from './pages/Relecture';
+import Physique from './pages/Physique';
+import Classements from './pages/Classements';
+import Championnat from './pages/Championnat';
+import Rapports from './pages/Rapports';
+import Shortlists from './pages/Shortlists';
+import { Clubs, Competitions } from './pages/Referentiel';
+import Abonnements from './pages/Abonnements';
+import { Utilisateurs, Audit } from './pages/Admin';
+import { Equipe, Assistant } from './pages/Equipe';
+import Apprentissage from './pages/Apprentissage';
+import { Inscription, MonCompte } from './pages/Compte';
+import { JoueurForm, MatchForm } from './pages/Formulaires';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,9 +39,12 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/" element={<Accueil />} />
           <Route path="/connexion" element={<Connexion />} />
+          <Route path="/inscription" element={<Inscription />} />
           <Route path="/app" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="joueurs" element={<Joueurs />} />
+            <Route path="joueurs/nouveau" element={<JoueurForm />} />
+            <Route path="joueurs/:id/modifier" element={<JoueurForm />} />
             <Route path="joueurs/:id" element={<JoueurDetail />} />
             <Route path="comparaison" element={<Comparaison />} />
             <Route path="matchs" element={<Matchs />} />
@@ -33,6 +52,26 @@ createRoot(document.getElementById('root')!).render(
             <Route path="matchs/:id/direct" element={<Direct />} />
             <Route path="matchs/:id/pistes-ia" element={<PistesIA />} />
             <Route path="cameras" element={<Cameras />} />
+            <Route path="matchs/nouveau" element={<MatchForm />} />
+            <Route path="matchs/:id/modifier" element={<MatchForm />} />
+            <Route path="matchs/:id/codage" element={<Codage />} />
+            <Route path="matchs/:id/relecture" element={<Relecture />} />
+            <Route path="matchs/:id/tactique" element={<Tactique />} />
+            <Route path="matchs/:id/verification-ia" element={<VerificationIA />} />
+            <Route path="matchs/:id/physique" element={<Physique />} />
+            <Route path="classements" element={<Classements />} />
+            <Route path="championnat" element={<Championnat />} />
+            <Route path="rapports" element={<Rapports />} />
+            <Route path="shortlists" element={<Shortlists />} />
+            <Route path="clubs" element={<Clubs />} />
+            <Route path="competitions" element={<Competitions />} />
+            <Route path="abonnements" element={<Abonnements />} />
+            <Route path="utilisateurs" element={<Utilisateurs />} />
+            <Route path="audit" element={<Audit />} />
+            <Route path="equipe" element={<Equipe />} />
+            <Route path="assistant" element={<Assistant />} />
+            <Route path="apprentissage" element={<Apprentissage />} />
+            <Route path="compte" element={<MonCompte />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

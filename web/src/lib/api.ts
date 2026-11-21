@@ -65,10 +65,11 @@ function url(chemin: string, p?: Parametres) {
 async function requete<T = any>(methode: string, chemin: string, corps?: unknown, p?: Parametres): Promise<T> {
   const entetes: Record<string, string> = { Accept: 'application/json' };
   if (jeton) entetes.Authorization = `Token ${jeton}`;
-  if (corps !== undefined) entetes['Content-Type'] = 'application/json';
+  const formulaire = typeof FormData !== 'undefined' && corps instanceof FormData; // le navigateur fixe le Content-Type multipart
+  if (corps !== undefined && !formulaire) entetes['Content-Type'] = 'application/json';
   let r: Response;
   try {
-    r = await fetch(url(chemin, p), { method: methode, headers: entetes, body: corps === undefined ? undefined : JSON.stringify(corps) });
+    r = await fetch(url(chemin, p), { method: methode, headers: entetes, body: corps === undefined ? undefined : formulaire ? (corps as FormData) : JSON.stringify(corps) });
   } catch {
     throw new ErreurApi(`Serveur injoignable (${SERVEUR}). Vérifiez la connexion.`, 0, null);
   }

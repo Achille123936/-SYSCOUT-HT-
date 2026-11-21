@@ -3,18 +3,20 @@ import { Link } from 'react-router-dom';
 import { api, type Page } from '../lib/api';
 import { ETATS_MATCH, TON_ETAT, dateHeureFR } from '../lib/format';
 import { useChargement } from '../lib/hooks';
-import { Badge, Card, Choix, Etat, Pagination, Titre, Vide } from '../components/ui';
+import { useAuth } from '../lib/auth';
+import { Badge, Bouton, Card, Choix, Etat, Pagination, Titre, Vide } from '../components/ui';
 
 const TAILLE = 20;
 
 export default function Matchs() {
   const [etat, setEtat] = useState('');
   const [page, setPage] = useState(1);
+  const { a } = useAuth();
   const t = useChargement<Page<any>>(() => api.get('/matchs/', { etat, page, page_size: TAILLE }), [etat, page]);
 
   return (
     <>
-      <Titre titre="Matchs" sous="Rencontres, compositions et suivi en direct." />
+      <Titre titre="Matchs" sous="Rencontres, compositions et suivi en direct." droite={a('ADMIN', 'ANALYSTE') ? <Link to="/app/matchs/nouveau"><Bouton>+ Nouveau match</Bouton></Link> : undefined} />
       <Card className="mb-6"><div className="max-w-xs">
         <Choix libelle="État" value={etat} onChange={(e) => { setEtat(e.target.value); setPage(1); }}>
           <option value="">Tous</option>{ETATS_MATCH.map(([v, l]) => <option key={v} value={v}>{l}</option>)}

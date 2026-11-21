@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../lib/auth';
 import { api, type Page } from '../lib/api';
 import { GROUPES, nombre } from '../lib/format';
 import { useChargement } from '../lib/hooks';
-import { Badge, Card, Champ, Choix, Etat, Pagination, Titre, Vide } from '../components/ui';
+import { Badge, Bouton, Card, Champ, Choix, Etat, Pagination, Titre, Vide } from '../components/ui';
 
 const TAILLE = 20;
 
@@ -11,12 +12,13 @@ const TAILLE = 20;
 export default function Joueurs() {
   const [f, setF] = useState({ q: '', groupe: '', division: '', age_min: '', age_max: '', indice_min: '', tri: '' });
   const [page, setPage] = useState(1);
+  const { a } = useAuth();
   const maj = (cle: string, v: string) => { setF((x) => ({ ...x, [cle]: v })); setPage(1); };
   const t = useChargement<Page<any>>(() => api.get('/joueurs/', { ...f, page, page_size: TAILLE }), [JSON.stringify(f), page]);
 
   return (
     <>
-      <Titre titre="Joueurs" sous="Recherche par nom, poste, division, âge et indice de performance." />
+      <Titre titre="Joueurs" sous="Recherche par nom, poste, division, âge et indice de performance." droite={a('ADMIN', 'ANALYSTE', 'SCOUT', 'CLUB_ADMIN') ? <Link to="/app/joueurs/nouveau"><Bouton>+ Nouveau joueur</Bouton></Link> : undefined} />
       <Card className="mb-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-2"><Champ libelle="Nom" placeholder="Rechercher…" value={f.q} onChange={(e) => maj('q', e.target.value)} /></div>
