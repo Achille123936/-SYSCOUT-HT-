@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode, type MutableRefObject } from 'react';
+import { estHls, useHls } from '../lib/hls';
 
 export interface Taille { l: number; h: number }
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -19,6 +20,7 @@ export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin
   const [lecture, setLecture] = useState(false);
   const [taille, setTaille] = useState<Taille>({ l: 16, h: 9 });
   const [appui, setAppui] = useState(false);
+  useHls(video, src);
 
   useEffect(() => {
     if (!boite.current) return;
@@ -38,7 +40,7 @@ export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin
   return (
     <div>
       <div ref={boite} className="relative overflow-hidden rounded-lg bg-black">
-        <video ref={(el) => { video.current = el; if (refVideo) refVideo.current = el; }} src={src} className="block w-full"
+        <video ref={(el) => { video.current = el; if (refVideo) refVideo.current = el; }} src={estHls(src) ? undefined : src} className="block w-full"
           onTimeUpdate={(e) => { const t = e.currentTarget.currentTime; setTemps(t); onTemps?.(t); }} onLoadedMetadata={(e) => setDuree(e.currentTarget.duration)}
           onPlay={() => setLecture(true)} onPause={() => setLecture(false)} playsInline />
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className={`absolute inset-0 h-full w-full ${capture ? 'cursor-crosshair' : 'pointer-events-none'}`}

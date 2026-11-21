@@ -16,7 +16,7 @@ from comptes.models import Role
 from core.api import AuditMixin
 from core.auth import AbonnementActif, SPORTIFS, roles
 from core.services import controler_codage, journaliser, recalculer_saison
-from matchs import direct, live
+from matchs import direct, live, stockage
 from matchs.models import (Annotation, DonneePhysique, EtatMatch, Evenement, Match, PisteJoueur, Playlist,
                            PropositionIA, SourceDonnee, StatutValidation, SuiviJoueur, TypeAction, ValidationEvenement)
 from matchs.serializers import (AnnotationSerializer, DonneePhysiqueSerializer, EvenementSerializer,
@@ -90,16 +90,46 @@ class MatchViewSet(AuditMixin, viewsets.ModelViewSet):
         if fichier.size == 0:
             raise ValidationError({'video': 'Le fichier est vide.'})
 
-    @action(detail=True, methods=['post'], url_path='importer-video')
-    def importer_video(self, request, pk=None):
-        """CU06 étapes 7-8 : la vidéo est stockée sur le NAS et le match passe à « Vidéo importée »."""
+    @action(detail=True, methods=['post'], url_path='televersement-video')
+    def televersement_video(self, request, pk=None):
+        """Où envoyer la vidéo ? Avec un stockage S3 : une adresse signée où le navigateur dépose le fichier directement
+        (il ne passe pas par le serveur) ; sinon `mode: local`, et le fichier s'envoie à `importer-video`."""
         match = self.get_object()
         if match.etat not in (EtatMatch.PLANIFIE, EtatMatch.VIDEO_IMPORTEE):
             raise ValidationError("La vidéo ne peut plus être remplacée : le codage a commencé.")
-        fichier, adresse = request.FILES.get('video'), request.data.get('video_url')
-        if not fichier and not adresse:
+        nom = str(request.data.get('nom', ''))
+        try:
+            taille = int(request.data.get('taille', 0))
+        except (TypeError, ValueError):
+            raise ValidationError({'taille': 'Taille invalide.'})
+        p = settings.SYSCOUT
+        if not nom.lower().endswith(p['VIDEO_EXTENSIONS']):
+            raise ValidationError({'nom': f"Format non accepté. Formats acceptés : {', '.join(p['VIDEO_EXTENSIONS'])}."})
+        if not 0 < taille <= p['VIDEO_MAX_MO'] * 1024 * 1024:
+            raise ValidationError({'taille': f"Fichier vide ou de plus de {p['VIDEO_MAX_MO']} Mo."})
+        if not stockage.actif():
+            return Response({'mode': 'local'})
+        type_mime = str(request.data.get('type') or 'video/mp4')[:100]
+        return Response(stockage.adresse_d_envoi(match, nom, type_mime))
+
+    @action(detail=True, methods=['post'], url_path='importer-video')
+    def importer_video(self, request, pk=None):
+        """CU06 étapes 7-8 : la vidéo est stockée (disque du serveur ou stockage S3) et le match passe à « Vidéo importée ».
+        Trois sources : un fichier (`video`), l'adresse d'une vidéo hébergée (`video_url`), ou la clé d'un fichier déjà
+        déposé sur le stockage S3 avec l'adresse de `televersement-video` (`cle`)."""
+        match = self.get_object()
+        if match.etat not in (EtatMatch.PLANIFIE, EtatMatch.VIDEO_IMPORTEE):
+            raise ValidationError("La vidéo ne peut plus être remplacée : le codage a commencé.")
+        fichier, adresse, cle = request.FILES.get('video'), request.data.get('video_url'), request.data.get('cle')
+        if not fichier and not adresse and not cle:
             raise ValidationError({'video': 'Choisissez un fichier vidéo ou indiquez son adresse.'})
-        if fichier:
+        ancienne = match.video.name if match.video else ''
+        if cle:
+            if not stockage.actif():
+                raise ValidationError({'cle': "Ce serveur n'utilise pas de stockage S3."})
+            stockage.verifier_arrivee(match, cle)
+            match.video, match.video_url = cle, ''
+        elif fichier:
             self._controler_fichier_video(fichier)
             match.video, match.video_url = fichier, ''
         else:
@@ -107,6 +137,11 @@ class MatchViewSet(AuditMixin, viewsets.ModelViewSet):
         match.etat = EtatMatch.VIDEO_IMPORTEE
         match.full_clean(exclude=['video'])
         match.save()
+        if ancienne and ancienne != (match.video.name if match.video else ''):
+            try:
+                match.video.storage.delete(ancienne)  # la vidéo remplacée ne reste pas sur le stockage
+            except Exception:  # noqa: BLE001 — un nettoyage raté ne fait pas échouer l'importation
+                pass
         journaliser(request, 'MODIFICATION', match, apres={'video': match.video.name or match.video_url})
         return self._reponse(match)
 

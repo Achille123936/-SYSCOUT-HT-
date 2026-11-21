@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent } from 'react';
-import { api, televerser } from '../lib/api';
+import { api, importerVideo } from '../lib/api';
 import { dateFR } from '../lib/format';
 import Modal from './Modal';
 import { Alerte, Bouton, Champ, Choix } from './ui';
@@ -55,10 +55,8 @@ export default function ImporterVideo({ ouvert, onFermer, matchId, onFait }: { o
       let resultat;
       if (mode === 'fichier') {
         if (!fichier) return setErreur('Choisissez un fichier vidéo.');
-        const corps = new FormData();
-        corps.append('video', fichier);
         setProgres(0);
-        const t = televerser(`/matchs/${id}/importer-video/`, corps, setProgres);
+        const t = importerVideo(id, fichier, setProgres);
         annulation.current = t.annuler;
         resultat = await t.promesse;
       } else {

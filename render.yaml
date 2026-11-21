@@ -31,6 +31,17 @@ services:
         value: "5432"
       - key: PGSSLMODE
         value: require
+      # Stockage des vidéos (S3, R2, B2…) : voir DEPLOIEMENT.md. Sans SYSCOUT_S3_BUCKET, disque du serveur (effacé à chaque déploiement).
+      - key: SYSCOUT_S3_BUCKET
+        sync: false
+      - key: SYSCOUT_S3_REGION
+        sync: false
+      - key: SYSCOUT_S3_ENDPOINT
+        sync: false
+      - key: SYSCOUT_S3_ACCESS_KEY
+        sync: false
+      - key: SYSCOUT_S3_SECRET_KEY
+        sync: false
       - key: SYSCOUT_HOSTS   # ex. syscout-api.onrender.com
         sync: false
       - key: SYSCOUT_CORS    # adresse du site web, ex. https://syscout-web.onrender.com

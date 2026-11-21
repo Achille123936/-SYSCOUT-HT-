@@ -131,3 +131,32 @@ export function televerser<T = any>(chemin: string, corps: FormData, surProgress
   });
   return { promesse, annuler: () => xhr.abort() };
 }
+
+/** Importe la vidéo d'un match. Le serveur dit où l'envoyer : directement vers le stockage S3 par une adresse signée (le fichier
+ *  ne passe pas par Django), ou vers lui-même. Renvoie le match mis à jour ; `annuler()` interrompt l'envoi. */
+export function importerVideo(matchId: number, fichier: File, surProgression?: (pourcent: number) => void): { promesse: Promise<any>; annuler: () => void } {
+  let interrompre: () => void = () => {};
+  const promesse = (async () => {
+    const dest = await api.post<any>(`/matchs/${matchId}/televersement-video/`, { nom: fichier.name, taille: fichier.size, type: fichier.type || 'video/mp4' });
+    if (dest.mode !== 's3') {
+      const corps = new FormData();
+      corps.append('video', fichier);
+      const t = televerser(`/matchs/${matchId}/importer-video/`, corps, surProgression);
+      interrompre = t.annuler;
+      return t.promesse;
+    }
+    await new Promise<void>((resolve, reject) => { // dépôt direct sur le stockage
+      const xhr = new XMLHttpRequest();
+      interrompre = () => xhr.abort();
+      xhr.open(dest.methode || 'PUT', dest.url);
+      Object.entries(dest.entetes || {}).forEach(([k, v]) => xhr.setRequestHeader(k, String(v)));
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) surProgression?.(Math.round((e.loaded / e.total) * 100)); };
+      xhr.onerror = () => reject(new ErreurApi("Le stockage des vidéos est injoignable ou refuse l'envoi (vérifiez la configuration CORS du stockage).", 0, null));
+      xhr.onabort = () => reject(new ErreurApi('Envoi annulé.', 0, null));
+      xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new ErreurApi(`Le stockage a refusé le fichier (${xhr.status}).`, xhr.status, null)));
+      xhr.send(fichier);
+    });
+    return api.post(`/matchs/${matchId}/importer-video/`, { cle: dest.cle });
+  })();
+  return { promesse, annuler: () => interrompre() };
+}

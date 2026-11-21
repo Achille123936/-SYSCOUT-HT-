@@ -120,7 +120,26 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
-MEDIA_ROOT = BASE_DIR / 'media'  # en production : montage du NAS de vidéos
+MEDIA_ROOT = BASE_DIR / 'media'  # sans stockage objet : disque local (servi par Django en développement seulement)
+
+# Stockage objet compatible S3 pour les vidéos (SRS §5.1, §18) : actif dès que SYSCOUT_S3_BUCKET est défini.
+# Les liens de lecture sont signés et temporaires (liens privés) ; l'envoi se fait directement du navigateur vers le stockage.
+S3_BUCKET = os.environ.get('SYSCOUT_S3_BUCKET', '')
+if S3_BUCKET:
+    STORAGES = {
+        'default': {'BACKEND': 'storages.backends.s3.S3Storage', 'OPTIONS': {
+            'bucket_name': S3_BUCKET,
+            'region_name': os.environ.get('SYSCOUT_S3_REGION') or None,
+            'endpoint_url': os.environ.get('SYSCOUT_S3_ENDPOINT') or None,   # R2, B2, MinIO : adresse du service
+            'access_key': os.environ.get('SYSCOUT_S3_ACCESS_KEY'),
+            'secret_key': os.environ.get('SYSCOUT_S3_SECRET_KEY'),
+            'signature_version': 's3v4',
+            'querystring_auth': True,                                          # liens privés : signés
+            'querystring_expire': int(os.environ.get('SYSCOUT_S3_LIEN_SECONDES', '3600')),
+            'file_overwrite': False,
+        }},
+        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    }
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ['core.auth.JetonAvecExpiration'],
@@ -149,6 +168,7 @@ SYSCOUT = {
     'TAUX_TCA': 0.10,                # taxe sur le chiffre d'affaires
     'VERROU_MINUTES': 30,            # un verrou de codage inactif peut être repris
     'DUREE_TICKET_EXPORT': 120,      # secondes de validité d'un lien d'export PDF
+    'S3': bool(S3_BUCKET),
     'VIDEO_MAX_MO': int(os.environ.get('SYSCOUT_VIDEO_MAX_MO', '2048')),   # SRS §18 : taille maximale d'une vidéo importée
     'VIDEO_EXTENSIONS': ('.mp4', '.m4v', '.mov', '.webm', '.mkv'),         # SRS §18 : types de fichiers acceptés
     'SAUVEGARDES': [BASE_DIR / 'sauvegardes' / 'disque_externe', BASE_DIR / 'sauvegardes' / 'cloud'],

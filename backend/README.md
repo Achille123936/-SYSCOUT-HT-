@@ -149,6 +149,15 @@ L'adresse du flux peut contenir un mot de passe : elle n'est jamais relue en cla
 Une caméra RTSP n'est pas lisible directement par un navigateur ou un téléphone : un serveur de diffusion
 (MediaMTX, par exemple) la convertit en HLS, dont l'adresse se met dans « adresse de lecture ».
 
+## Vidéos : disque local ou stockage S3
+
+`POST /api/matchs/{id}/importer-video/` accepte un fichier (`video`), l'adresse d'une vidéo hébergée (`video_url`) ou, avec un stockage S3,
+la clé (`cle`) d'un fichier déjà déposé. Avec `SYSCOUT_S3_BUCKET` défini, `POST /api/matchs/{id}/televersement-video/`
+`{nom, taille, type}` renvoie une adresse signée (PUT, 1 h) où le navigateur dépose la vidéo directement ; sinon `{"mode": "local"}`.
+Les formats (`.mp4 .m4v .mov .webm .mkv`) et la taille (2 048 Mo, `SYSCOUT_VIDEO_MAX_MO`) sont contrôlés à l'adresse demandée et à l'arrivée.
+Variables : `SYSCOUT_S3_BUCKET`, `SYSCOUT_S3_REGION`, `SYSCOUT_S3_ENDPOINT`, `SYSCOUT_S3_ACCESS_KEY`, `SYSCOUT_S3_SECRET_KEY`,
+`SYSCOUT_S3_LIEN_SECONDES`. Voir `../DEPLOIEMENT.md` (CORS du bucket). Les tests S3 utilisent `moto` : `pip install -r requirements-dev.txt`.
+
 ## Tests
 
 ```bash

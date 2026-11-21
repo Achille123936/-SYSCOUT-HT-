@@ -3,7 +3,8 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { TON_ETAT, dateHeureFR } from '../lib/format';
 import { useChargement } from '../lib/hooks';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { estHls, useHls } from '../lib/hls';
 import ImporterVideo from '../components/ImporterVideo';
 import { Alerte, Badge, Bouton, Card, Etat, Titre } from '../components/ui';
 
@@ -16,6 +17,8 @@ export default function MatchDetail() {
   const analyste = a('ADMIN', 'ANALYSTE');
   const [erreur, setErreur] = useState<string | null>(null);
   const [importer, setImporter] = useState(false);
+  const lecteur = useRef<HTMLVideoElement | null>(null);
+  useHls(lecteur, t.donnees?.video_lecture);
   const corriger = async () => { if (!window.confirm("Rouvrir le codage ? Les statistiques du match sont retirées de la saison jusqu'à la nouvelle validation.")) return; try { await api.post(`/matchs/${id}/corriger/`); t.recharger(); } catch (e) { setErreur((e as Error).message); } };
   const annuler = async () => { if (!window.confirm('Annuler ce match ?')) return; try { await api.post(`/matchs/${id}/annuler/`); t.recharger(); } catch (e) { setErreur((e as Error).message); } };
 
@@ -42,7 +45,7 @@ export default function MatchDetail() {
           <Alerte ton="rouge">{erreur}</Alerte>
           <Card titre="Vidéo du match" className="mb-6"
             droite={analyste && ['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <Bouton onClick={() => setImporter(true)}>{m.video_lecture ? 'Remplacer la vidéo' : 'Importer une vidéo'}</Bouton> : undefined}>
-            {m.video_lecture ? <video src={m.video_lecture} controls className="max-h-80 w-full rounded-lg bg-black" /> : <p className="text-sm text-slate-500">Aucune vidéo pour ce match.</p>}
+            {m.video_lecture ? <video ref={lecteur} src={estHls(m.video_lecture) ? undefined : m.video_lecture} controls className="max-h-80 w-full rounded-lg bg-black" /> : <p className="text-sm text-slate-500">Aucune vidéo pour ce match.</p>}
             {analyste && !['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <p className="mt-3 text-xs text-slate-400">Le codage a commencé : la vidéo ne peut plus être remplacée.</p> : null}
           </Card>
           <ImporterVideo ouvert={importer} onFermer={() => setImporter(false)} matchId={m.id} onFait={() => t.recharger()} />

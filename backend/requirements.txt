@@ -10,3 +10,5 @@ daphne>=4.1,<5
 # Plusieurs processus serveur (production) : channels-redis>=4.2 et SYSCOUT_REDIS_URL
 # PostgreSQL (voir SEL 2.1)
 psycopg[binary]>=3.2
+# Stockage objet compatible S3 (AWS S3, Cloudflare R2, Backblaze B2, MinIO) : actif si SYSCOUT_S3_BUCKET est défini
+django-storages[s3]>=1.14

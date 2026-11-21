@@ -1,0 +1,3 @@
+# Tests seulement : simulation de S3 en mémoire
+-r requirements.txt
+moto[s3]>=5

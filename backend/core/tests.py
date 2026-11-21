@@ -2258,3 +2258,85 @@ class Test_Import_Video(Base):
         self.assertEqual(self.client.post(self.url, {'video_url': 'https://exemple.ht/autre.mp4'}, format='json').status_code, 400)
         self.comme(self.scout)
         self.assertEqual(self.client.post(self.url, {'video_url': 'https://exemple.ht/x.mp4'}, format='json').status_code, 403)
+
+
+class Test_Stockage_S3(Base):
+    """SRS §5.1 et §18 : stockage objet compatible S3 (simulé en mémoire par moto), envoi direct par adresse signée,
+    contrôle de ce qui est arrivé, lien de lecture signé et temporaire."""
+
+    def setUp(self):
+        import boto3
+        from django.conf import settings
+        from django.test import override_settings
+        from moto import mock_aws
+
+        self.simulation = mock_aws()
+        self.simulation.start()
+        self.addCleanup(self.simulation.stop)
+        self.s3 = boto3.client('s3', region_name='us-east-1', aws_access_key_id='essai', aws_secret_access_key='essai')
+        self.s3.create_bucket(Bucket='videos-essai')
+        stockages = {'default': {'BACKEND': 'storages.backends.s3.S3Storage', 'OPTIONS': {
+            'bucket_name': 'videos-essai', 'region_name': 'us-east-1', 'access_key': 'essai', 'secret_key': 'essai',
+            'querystring_auth': True, 'querystring_expire': 600, 'file_overwrite': False}},
+            'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}}
+        reglages = override_settings(STORAGES=stockages, SYSCOUT={**settings.SYSCOUT, 'S3': True})
+        reglages.enable()
+        self.addCleanup(reglages.disable)
+        self.match = self.creer_match(etat=EtatMatch.PLANIFIE)
+        Match.objects.filter(pk=self.match.pk).update(video_url='')
+        self.comme(self.analyste)
+        self.base = f'/api/matchs/{self.match.id}'
+
+    def demander(self, nom='match.mp4', taille=5000):
+        return self.client.post(f'{self.base}/televersement-video/', {'nom': nom, 'taille': taille, 'type': 'video/mp4'}, format='json')
+
+    def test_envoi_direct_puis_importation(self):
+        r = self.demander()
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual((r.data['mode'], r.data['methode']), ('s3', 'PUT'))
+        cle = r.data['cle']
+        self.assertTrue(cle.startswith(f'videos/match-{self.match.id}/') and cle.endswith('.mp4'))
+        self.assertIn('Signature', r.data['url'])  # adresse signée
+        # avant l'envoi, rien n'est arrivé
+        self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': cle}, format='json').status_code, 400)
+        self.s3.put_object(Bucket='videos-essai', Key=cle, Body=b'x' * 5000, ContentType='video/mp4')  # ce que fait le navigateur
+        r = self.client.post(f'{self.base}/importer-video/', {'cle': cle}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        self.assertEqual(r.data['etat'], 'VIDEO_IMPORTEE')
+        self.assertIn('Signature', r.data['video_lecture'])  # lien de lecture privé et temporaire
+        self.assertIn('Expires', r.data['video_lecture'])
+
+    def test_controles(self):
+        self.assertEqual(self.demander(nom='virus.exe').status_code, 400)
+        self.assertEqual(self.demander(taille=0).status_code, 400)
+        autre = f'videos/match-{self.match.id + 999}/x.mp4'
+        self.s3.put_object(Bucket='videos-essai', Key=autre, Body=b'x')
+        self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': autre}, format='json').status_code, 400)  # autre match
+        self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': f'videos/match-{self.match.id}/../x.mp4'}, format='json').status_code, 400)
+        self.comme(self.scout)
+        self.assertEqual(self.demander().status_code, 403)
+
+    def test_fichier_trop_gros_supprime_et_remplacement_nettoye(self):
+        from django.conf import settings
+        from django.test import override_settings
+        cle = self.demander().data['cle']
+        self.s3.put_object(Bucket='videos-essai', Key=cle, Body=b'x' * 3000)
+        with override_settings(SYSCOUT={**settings.SYSCOUT, 'VIDEO_MAX_MO': 0}):
+            r = self.client.post(f'{self.base}/importer-video/', {'cle': cle}, format='json')
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(self.s3.list_objects_v2(Bucket='videos-essai').get('KeyCount', 0), 0)  # le fichier hors limite est retiré
+        premiere = self.demander().data['cle']
+        self.s3.put_object(Bucket='videos-essai', Key=premiere, Body=b'a' * 100)
+        self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': premiere}, format='json').status_code, 200)
+        seconde = self.demander().data['cle']
+        self.s3.put_object(Bucket='videos-essai', Key=seconde, Body=b'b' * 100)
+        self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': seconde}, format='json').status_code, 200)
+        cles = [o['Key'] for o in self.s3.list_objects_v2(Bucket='videos-essai')['Contents']]
+        self.assertEqual(cles, [seconde])  # la vidéo remplacée a été supprimée
+
+    def test_mode_local_sans_s3(self):
+        from django.conf import settings
+        from django.test import override_settings
+        with override_settings(SYSCOUT={**settings.SYSCOUT, 'S3': False}):
+            self.assertEqual(self.demander().data, {'mode': 'local'})
+            self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': 'videos/x.mp4'}, format='json').status_code, 400)

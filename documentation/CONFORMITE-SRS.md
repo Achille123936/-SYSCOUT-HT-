@@ -76,11 +76,11 @@ Palette du §17.1 reprise par le site web. **Langues** : interface en français 
 | Lecture, timeline, recherche par événement et joueur, annotations | Fait |
 | Lien entre horodatage vidéo et horloge du match | Non fait (pas de décalage de coup d'envoi ni de mi-temps) |
 | Droits, conservation et téléchargement des vidéos | Non fait |
-| Liens vidéo privés et temporaires | Non fait (les exports PDF ont un lien signé et temporaire ; pas les vidéos) |
-| Stockage objet compatible S3 | Non fait (disque local ; `media/` n'est pas servi hors développement) |
+| Liens vidéo privés et temporaires | Fait avec le stockage S3 (liens signés, 1 h par défaut) ; sans S3, les vidéos restent sur le disque du serveur |
+| Stockage objet compatible S3 | Fait et testé avec une simulation (moto) : envoi direct du navigateur, contrôle à l'arrivée, nettoyage des vidéos remplacées. **Jamais essayé avec un vrai fournisseur** (AWS S3, Cloudflare R2, Backblaze B2). Sans `SYSCOUT_S3_BUCKET`, disque local (non servi hors développement) |
 | HTTPS, mots de passe hachés (PBKDF2), RBAC, jeton à inactivité de 20 min, audit, protection des mineurs | Fait |
 | Sauvegardes **chiffrées** | Non fait (sauvegardes JSON en clair) |
-| Validation et limites de taille des fichiers importés | Non vérifié : aucune limite réglée dans `settings.py` |
+| Validation et limites de taille des fichiers importés | Fait pour les vidéos : formats `.mp4 .m4v .mov .webm .mkv`, 2 048 Mo au plus (`SYSCOUT_VIDEO_MAX_MO`), contrôlés par le navigateur et par le serveur |
 | Exigences légales (Haïti et pays partenaires) | À examiner avant la production, comme le dit le SRS |
 
 ## Écarts de technologie (§5.1, §15, §19)

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { estHls, useHls } from '../lib/hls';
 import { Link, useParams } from 'react-router-dom';
 import { ErreurApi, api, nouvelleCle } from '../lib/api';
 import { TYPES_ACTION } from '../lib/format';
@@ -38,6 +39,7 @@ export default function Codage() {
   const match = useChargement<any>(() => api.get(`/matchs/${id}/`), [id]);
   const evts = useChargement<any>(() => api.get('/evenements/', { match: id, page_size: 1000 }), [id]);
   const m = match.donnees;
+  useHls(video, m?.video_lecture);
   const compo: any[] = (m?.compositions || []).filter((c: any) => c.club === (club === 'domicile' ? m?.club_domicile : m?.club_exterieur));
 
   const ouvrir = useCallback(async () => {
@@ -123,7 +125,7 @@ export default function Codage() {
           <div className="space-y-6">
             <Card titre="Vidéo">
               {m.video_lecture
-                ? <video ref={video} src={m.video_lecture} controls className="w-full rounded-lg bg-black" />
+                ? <video ref={video} src={estHls(m.video_lecture) ? undefined : m.video_lecture} controls className="w-full rounded-lg bg-black" />
                 : <Alerte ton="bleu">Aucune vidéo lisible. La minute se saisit alors à la main ci-dessous.</Alerte>}
               <div className="mt-3 max-w-[10rem]"><label className="block text-sm"><span className="mb-1 block font-medium text-slate-700">Minute (laisser vide = selon la vidéo)</span>
                 <input type="number" min={0} max={m.duree} value={minuteManuelle} onChange={(e) => setMinuteManuelle(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label></div>

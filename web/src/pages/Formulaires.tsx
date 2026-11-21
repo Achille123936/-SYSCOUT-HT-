@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api, televerser } from '../lib/api';
+import { api, importerVideo } from '../lib/api';
 import { controlerFichier, EXTENSIONS, TAILLE_MAX_MO } from '../components/ImporterVideo';
 import { useChargement } from '../lib/hooks';
 import { Alerte, Bouton, Card, Champ, Choix, Chargement, Titre } from '../components/ui';
@@ -106,9 +106,7 @@ export function MatchForm() {
       const r = id ? await api.patch(`/matchs/${id}/`, corps) : await api.post('/matchs/', corps);
       if (fichierVideo) {
         setProgres(0);
-        const corps = new FormData();
-        corps.append('video', fichierVideo);
-        await televerser(`/matchs/${r.id}/importer-video/`, corps, setProgres).promesse;
+        await importerVideo(r.id, fichierVideo, setProgres).promesse;
         setProgres(null);
       } else if (f.video_url && f.video_url !== existant.donnees?.video_url) await api.post(`/matchs/${r.id}/importer-video/`, { video_url: f.video_url });
       navigate(`/app/matchs/${r.id}`);
