@@ -90,6 +90,16 @@ def deconnexion(request):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['POST'])
+def renouveler_jeton(request):
+    """SRS §18 : renouvellement du jeton. Le jeton présenté est remplacé par un nouveau (l'ancien cesse de valoir) ;
+    il faut donc que la session soit encore ouverte, c'est-à-dire active depuis moins de 20 minutes."""
+    Token.objects.filter(user=request.user).delete()
+    jeton = Token.objects.create(user=request.user)
+    journaliser(request, 'CONNEXION', request.user, apres={'renouvellement': True})
+    return Response({'jeton': jeton.key, 'inactivite_minutes': P['INACTIVITE_MINUTES']})
+
+
 @api_view(['GET'])
 def moi(request):
     donnees = UtilisateurSerializer(request.user).data

@@ -29,4 +29,5 @@ export type Ton = 'gris' | 'vert' | 'bleu' | 'orange' | 'rouge';
 export const TYPES_ACTION: Record<string, string> = {
   PASSE: 'Passe', TIR: 'Tir', BUT: 'But', DRIBBLE: 'Dribble', DUEL: 'Duel', INTERCEPTION: 'Interception',
   RECUPERATION: 'Récupération', CENTRE: 'Centre', FAUTE: 'Faute', CARTON: 'Carton',
+  CORNER: 'Corner', HORS_JEU: 'Hors-jeu', ARRET: 'Arrêt du gardien', REMPLACEMENT: 'Remplacement',
 };

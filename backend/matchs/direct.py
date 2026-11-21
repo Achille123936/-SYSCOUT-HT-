@@ -58,7 +58,7 @@ def _bilan(evenements):
         'centres': n(T.CENTRE), 'dribbles_reussis': n(T.DRIBBLE, True),
         'duels': n(T.DUEL), 'duels_gagnes': n(T.DUEL, True), 'duels_gagnes_pct': pct(T.DUEL),
         'recuperations': n(T.RECUPERATION), 'interceptions': n(T.INTERCEPTION), 'fautes': n(T.FAUTE),
-        'cartons': n(T.CARTON),
+        'cartons': n(T.CARTON), 'corners': n(T.CORNER), 'hors_jeux': n(T.HORS_JEU), 'arrets': n(T.ARRET),
     }
 
 

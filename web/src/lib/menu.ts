@@ -20,6 +20,7 @@ export const MENU: Entree[] = [
   { chemin: '/app/cameras', libelle: 'Caméras', roles: ['ADMIN', 'ANALYSTE'], groupe: 'Gestion' },
   { chemin: '/app/abonnements', libelle: 'Abonnements', roles: ['ADMIN', 'AGENT'], groupe: 'Gestion' },
   { chemin: '/app/utilisateurs', libelle: 'Utilisateurs', roles: ['ADMIN'], groupe: 'Administration' },
+  { chemin: '/app/indicateurs', libelle: 'Indicateurs de réussite', roles: ['ADMIN'], groupe: 'Administration' },
   { chemin: '/app/audit', libelle: 'Journal et sauvegardes', roles: ['ADMIN'], groupe: 'Administration' },
   { chemin: '/app/compte', libelle: 'Mon compte', roles: [...SPORTIFS, 'JOUEUR', 'AGENT'], groupe: 'Administration' },
 ];

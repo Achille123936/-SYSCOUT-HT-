@@ -110,6 +110,17 @@ points). Ces points n'entrent dans aucune statistique officielle. Le direct reç
 Pour essayer sans moteur IA : `python manage.py pistes_demo <match> [--pistes 6] [--points 120]` (pistes fictives
 `DEMO01`…, sans joueur), puis ouvrir « Pistes de l'IA » depuis la fiche du match.
 
+## Conformité au SRS
+
+Voir `../documentation/CONFORMITE-SRS.md` (ce qui est fait, partiel ou absent). Ajouts liés au SRS :
+
+- `/api/v1/…` (même routes que `/api/…`), `auth/login`, `auth/register`, `auth/logout`, `auth/refresh` (remplace le jeton).
+- Événements `CORNER`, `HORS_JEU`, `ARRET` (gardien) et `REMPLACEMENT` (`joueur` entre, `joueur_lie` sort ; minutes jouées recalculées).
+- Message WebSocket `match.clock.updated` à chaque événement codé.
+- `GET /api/indicateurs/` (administrateur) : couverture, qualité des données, utilisation ; ce que le serveur ne mesure pas reste `null`.
+- `python manage.py mesurer_nfr [--requetes 50] [--strict]` : P95 des lectures (NFR-001) et de l'écriture d'un événement (NFR-002),
+  dans une transaction annulée.
+
 ## Analyse tactique
 
 `GET /api/matchs/{id}/tactique/` (`?debut=` et `?fin=` en minutes) calcule pour chaque équipe, à partir des
@@ -144,7 +155,7 @@ Une caméra RTSP n'est pas lisible directement par un navigateur ou un télépho
 python manage.py test core      # SYSCOUT_DB=sqlite pour la base locale : 13 s (plusieurs minutes sur une base distante)
 ```
 
-127 tests, nommés d'après les exigences de la partie IV du SEL (`test_EF1_3_blocage_apres_5_essais`, `test_EF8_2_…`, `test_ENF7_…`).
+135 tests, nommés d'après les exigences de la partie IV du SEL (`test_EF1_3_blocage_apres_5_essais`, `test_EF8_2_…`, `test_ENF7_…`).
 
 ## Tâches quotidiennes
 

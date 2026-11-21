@@ -2033,6 +2033,8 @@ class Test_FR035_Direct_WebSocket(TransactionTestCase):
             score = await ws.receive_json_from(timeout=5)
             self.assertEqual(score['type'], 'match.score.updated')
             self.assertNotEqual(score['id'], cree['id'])  # chaque message a son identifiant
+            horloge = await ws.receive_json_from(timeout=5)  # SRS §16 : l'horloge avance avec le codage
+            self.assertEqual((horloge['type'], horloge['donnees']['minute']), ('match.clock.updated', 10))
             await database_sync_to_async(self.client.delete)(f"/api/evenements/{r.data['id']}/")
             efface = await ws.receive_json_from(timeout=5)
             self.assertEqual((efface['type'], efface['donnees'], efface['tableau']['score']),
@@ -2138,3 +2140,80 @@ class Test_Matchs_En_Direct_Publics(Base):
         self.assertEqual(set(m), {'id', 'competition', 'journee', 'stade', 'domicile', 'exterieur', 'score', 'minute'})
         Match.objects.filter(pk=match.id).update(verrouille_le=timezone.now() - timezone.timedelta(hours=3))
         self.assertEqual(self.client.get('/api/matchs-en-direct/').json(), [])  # codage abandonné
+
+
+class Test_SRS_8_2_Types_Evenements(Base):
+    """SRS §8.2 : corner, hors-jeu, arrêt du gardien et remplacement (joueur entrant et sortant)."""
+
+    def setUp(self):
+        self.match = self.creer_match(score=(0, 0))
+        self.comme(self.analyste)
+        self.client.post(f'/api/matchs/{self.match.id}/ouvrir-codage/')
+        self.eff = self.effectifs[self.ej.id]
+
+    def test_corner_et_hors_jeu(self):
+        for type_action in ('CORNER', 'HORS_JEU'):
+            self.assertEqual(self.coder(self.match, self.eff[10], type_action).status_code, 201)
+        bilan = self.client.get(f'/api/matchs/{self.match.id}/direct/').data['equipes']['domicile']
+        self.assertEqual((bilan['corners'], bilan['hors_jeux']), (1, 1))
+
+    def test_arret_reserve_au_gardien(self):
+        gardien = next(j for j in self.eff if j.poste == 'G')
+        champ = next(j for j in self.eff if j.poste != 'G')
+        self.assertEqual(self.coder(self.match, champ, 'ARRET').status_code, 400)
+        self.assertEqual(self.coder(self.match, gardien, 'ARRET').status_code, 201)
+        self.assertEqual(self.client.get(f'/api/matchs/{self.match.id}/direct/').data['equipes']['domicile']['arrets'], 1)
+
+    def test_remplacement_fixe_les_minutes(self):
+        sortant, entrant = self.eff[10], self.eff[12]  # titulaire, remplaçant
+        self.assertEqual(self.coder(self.match, entrant, 'REMPLACEMENT', minute=60).status_code, 400)  # sans sortant
+        self.assertEqual(self.coder(self.match, entrant, 'REMPLACEMENT', minute=60, joueur_lie=self.effectifs[self.usc.id][0].id).status_code, 400)
+        r = self.coder(self.match, entrant, 'REMPLACEMENT', minute=60, joueur_lie=sortant.id)
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['joueur_lie_nom'], sortant.nom_complet)
+        minutes = {c.joueur_id: c.minutes_jouees for c in Composition.objects.filter(match=self.match)}
+        self.assertEqual((minutes[sortant.id], minutes[entrant.id]), (60, 30))
+        self.assertIsNone(self.coder(self.match, self.eff[9], 'PASSE', joueur_lie=sortant.id).data['joueur_lie'])
+
+
+class Test_SRS_16_Api(Base):
+    """SRS §16 : préfixe /api/v1/, noms login / register / logout / refresh, horloge du match en temps réel."""
+
+    def test_prefixe_v1_et_noms_du_srs(self):
+        self.client.force_authenticate(None)
+        r = self.client.post('/api/v1/auth/login/', {'nom_utilisateur': self.analyste.nom_utilisateur, 'mot_de_passe': 'Syscout2026'}, format='json')
+        self.assertEqual(r.status_code, 200, r.data)
+        ancien = r.data['jeton']
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {ancien}')
+        self.assertEqual(self.client.get('/api/v1/auth/moi/').status_code, 200)
+        r = self.client.post('/api/v1/auth/refresh/')
+        self.assertEqual(r.status_code, 200)
+        self.assertNotEqual(r.data['jeton'], ancien)
+        self.assertEqual(self.client.get('/api/v1/auth/moi/').status_code, 401)  # l'ancien jeton ne vaut plus
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {r.data['jeton']}")
+        self.assertEqual(self.client.get('/api/matchs/').status_code, 200)
+        self.assertEqual(self.client.post('/api/v1/auth/logout/').status_code, 204)
+
+    def test_horloge_diffusee_avec_chaque_evenement(self):
+        from unittest import mock
+        match = self.creer_match(score=(0, 0))
+        self.comme(self.analyste)
+        self.client.post(f'/api/matchs/{match.id}/ouvrir-codage/')
+        with mock.patch('matchs.views.live.diffuser') as diffuser:
+            self.assertEqual(self.coder(match, self.effectifs[self.ej.id][10], 'PASSE', minute=17).status_code, 201)
+        envoyes = {c.args[1]: c.args[2] for c in diffuser.call_args_list if len(c.args) > 2}
+        self.assertEqual(envoyes['match.clock.updated'], {'minute': 17, 'temps_video': 1020})
+
+
+class Test_SRS_2_1_Indicateurs(AvecStatistiques):
+    def test_indicateurs_pour_l_administrateur_seulement(self):
+        self.comme(self.scout)
+        self.assertEqual(self.client.get('/api/indicateurs/').status_code, 403)
+        self.comme(self.admin)
+        r = self.client.get('/api/indicateurs/')
+        self.assertEqual(r.status_code, 200, r.data)
+        d = r.data
+        self.assertGreaterEqual(d['couverture']['joueurs'], 1)
+        self.assertEqual(d['qualite_donnees']['part_validee_pct'], 100.0)
+        self.assertIsNone(d['performance_ia']['f1'])  # non mesurable par le serveur : jamais inventé
+        self.assertIn('mesure', d['disponibilite'])

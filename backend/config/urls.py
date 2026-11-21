@@ -23,4 +23,6 @@ urlpatterns = [
     path('sante/', sante),
     path('admin/', admin.site.urls),
     *[path('api/', include(f'{module}.urls')) for module in MODULES],
+    # SRS §16 : préfixe /api/v1/, mêmes routes que /api/
+    *[path('api/v1/', include(f'{module}.urls')) for module in MODULES],
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

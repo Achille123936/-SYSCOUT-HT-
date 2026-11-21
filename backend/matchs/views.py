@@ -395,6 +395,8 @@ class EvenementViewSet(viewsets.ModelViewSet):
         evenement = serializer.save()
         self._prolonger_verrou(evenement.match)
         self._diffuser(evenement, 'match.event.created', serializer.data, evenement.type_action == TypeAction.BUT)
+        # SRS §16 : l'horloge du match avance avec le codage (minute et seconde de vidéo du dernier événement)
+        live.diffuser(evenement.match_id, 'match.clock.updated', {'minute': evenement.minute, 'temps_video': evenement.temps_video})
 
     def perform_update(self, serializer):
         """SRS §10 : toute correction est historisée ; un événement venu de l'IA devient « corrigé »."""

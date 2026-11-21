@@ -107,6 +107,11 @@ class TypeAction(models.TextChoices):
     FAUTE = 'FAUTE', 'Faute'
     BUT = 'BUT', 'But'
     CARTON = 'CARTON', 'Carton'
+    # SRS §8.2
+    CORNER = 'CORNER', 'Corner'
+    HORS_JEU = 'HORS_JEU', 'Hors-jeu'
+    ARRET = 'ARRET', 'Arrêt du gardien'
+    REMPLACEMENT = 'REMPLACEMENT', 'Remplacement'
 
 
 class SourceDonnee(models.TextChoices):
@@ -135,6 +140,8 @@ class Evenement(models.Model):
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='evenements')
     joueur = models.ForeignKey(Joueur, on_delete=models.PROTECT, related_name='evenements')
     type_action = models.CharField(max_length=14, choices=TypeAction.choices)
+    # remplacement : `joueur` entre, `joueur_lie` sort (SRS §8.2 : joueur entrant et sortant)
+    joueur_lie = models.ForeignKey(Joueur, null=True, blank=True, on_delete=models.PROTECT, related_name='evenements_lies')
     temps_video = models.PositiveIntegerField(default=0, help_text='secondes depuis le début de la vidéo')
     minute = models.PositiveSmallIntegerField()
     # zone du terrain en % ; x = 100 est le but adverse (sens de l'attaque du joueur)

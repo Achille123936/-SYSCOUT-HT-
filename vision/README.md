@@ -32,6 +32,16 @@ flux en direct, le décalage avec la vidéo du match reste à valider.
 - La boucle `moteur.suivre` n'a pas été exécutée avec YOLO ici (ultralytics non installé) ; la géométrie, le
   filtrage et l'envoi par lots sont testés.
 
+## Mesurer la qualité (SRS §9.2 et §20)
+
+```bash
+python -m syscout_vision.evaluation --verite gt.json --predictions pred.json      # précision, rappel, F1, IDF1, MOTA
+python -m syscout_vision.evaluation --ballon-verite b_gt.json --ballon-predictions b_pred.json
+```
+
+Formats des fichiers : voir l'en-tête de `syscout_vision/evaluation.py`. `verifier_separation()` signale un match partagé entre
+entraînement, validation et test (fuite de données). Il faut encore un jeu annoté de vidéos des stades haïtiens : il n'existe pas.
+
 ## Tests
 
 ```bash

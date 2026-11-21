@@ -29,6 +29,8 @@ export const ACTIONS = [
   ['DUEL', 'Duel', 'D', C.dGreen], ['DRIBBLE', 'Dribble', 'X', '#38bdf8'], ['INTERCEPTION', 'Interception', 'I', '#f472b6'],
   ['RECUPERATION', 'Récupération', 'R', C.dViolet], ['FAUTE', 'Faute', 'F', '#94a3b8'],
   ['BUT', 'But', 'B', '#ffd84d'], ['CARTON', 'Carton', 'K', '#fb923c'],
+  // SRS §8.2 ; le remplacement (joueur entrant et sortant) se code sur le site web
+  ['CORNER', 'Corner', 'O', '#a3e635'], ['HORS_JEU', 'Hors-jeu', 'H', '#e879f9'], ['ARRET', 'Arrêt du gardien', 'A', '#2dd4bf'],
 ];
 
 // axes du radar et lignes du tableau des statistiques (CU09)

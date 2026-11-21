@@ -8,8 +8,9 @@ import { Alerte, Badge, Bouton, Card, Chargement, Titre } from '../components/ui
 
 const PARTIES: [string, string][] = [['PIED_D', 'Pied droit'], ['PIED_G', 'Pied gauche'], ['TETE', 'Tête'], ['AUTRE', 'Autre']];
 const AVEC_ARRIVEE = ['PASSE', 'CENTRE'];
+const SANS_TERRAIN = ['REMPLACEMENT']; // le lieu n'a pas de sens pour un changement de joueur
 
-interface Saisie { cle_idempotence: string; match: number; joueur: number; type_action: string; minute: number; temps_video: number; zone_x: number; zone_y: number; fin_x?: number; fin_y?: number; resultat: boolean; partie_corps?: string }
+interface Saisie { cle_idempotence: string; match: number; joueur: number; joueur_lie?: number; type_action: string; minute: number; temps_video: number; zone_x: number; zone_y: number; fin_x?: number; fin_y?: number; resultat: boolean; partie_corps?: string }
 const fileLocale = (id: string | undefined) => `syscout.codage.${id}`;
 const lire = (id: string | undefined): Saisie[] => { try { return JSON.parse(localStorage.getItem(fileLocale(id)) || '[]'); } catch { return []; } };
 const ecrire = (id: string | undefined, v: Saisie[]) => { try { localStorage.setItem(fileLocale(id), JSON.stringify(v)); } catch { /* quota */ } };
@@ -21,6 +22,7 @@ export default function Codage() {
   const video = useRef<HTMLVideoElement>(null);
   const [club, setClub] = useState<'domicile' | 'exterieur'>('domicile');
   const [joueur, setJoueur] = useState<number | null>(null);
+  const [sortant, setSortant] = useState<number | null>(null);
   const [type, setType] = useState('PASSE');
   const [reussie, setReussie] = useState(true);
   const [partie, setPartie] = useState('PIED_D');
@@ -70,13 +72,15 @@ export default function Codage() {
 
   const enregistrer = async () => {
     setErreur(null); setInfo(null);
-    if (!joueur) return setErreur('Choisissez le joueur.');
-    if (!depart) return setErreur("Cliquez sur le terrain pour placer l'action.");
+    if (!joueur) return setErreur(type === 'REMPLACEMENT' ? 'Choisissez le joueur entrant.' : 'Choisissez le joueur.');
+    if (type === 'REMPLACEMENT' && !sortant) return setErreur('Choisissez le joueur sortant.');
+    if (!depart && !SANS_TERRAIN.includes(type)) return setErreur("Cliquez sur le terrain pour placer l'action.");
     const t = Math.floor(video.current?.currentTime ?? 0);
     const minute = minuteManuelle !== '' ? Number(minuteManuelle) : Math.min(m.duree, Math.floor(t / 60));
     const s: Saisie = {
       cle_idempotence: nouvelleCle(), match: Number(id), joueur, type_action: type, minute, temps_video: t,
-      zone_x: depart[0], zone_y: depart[1], resultat: type === 'BUT' ? true : reussie,
+      zone_x: depart?.[0] ?? 50, zone_y: depart?.[1] ?? 50, resultat: type === 'BUT' ? true : reussie,
+      ...(type === 'REMPLACEMENT' && sortant ? { joueur_lie: sortant } : {}),
       ...(AVEC_ARRIVEE.includes(type) && arrivee ? { fin_x: arrivee[0], fin_y: arrivee[1] } : {}),
       ...(['TIR', 'BUT'].includes(type) ? { partie_corps: partie } : {}),
     };
@@ -86,7 +90,7 @@ export default function Codage() {
         const f = [...lire(id), s]; ecrire(id, f); setAttente(f); setInfo('Réseau indisponible : saisie gardée sur cet appareil, elle sera renvoyée.');
       } else return setErreur((e as Error).message);
     }
-    setDepart(null); setArrivee(null);
+    setDepart(null); setArrivee(null); setSortant(null);
   };
   const supprimer = async (e: any) => { try { await api.delete(`/evenements/${e.id}/`); evts.recharger(); } catch (x) { setErreur((x as Error).message); } };
   const fermer = async () => { try { await api.post(`/matchs/${id}/fermer-codage/`); setVerrouOk(false); match.recharger(); } catch (e) { setErreur((e as Error).message); } };
@@ -158,6 +162,8 @@ export default function Codage() {
                 {['TIR', 'BUT'].includes(type) ? (
                   <select value={partie} onChange={(e) => setPartie(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1">{PARTIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>) : null}
               </div>
+              {type === 'REMPLACEMENT' ? <p className="mb-2 text-sm text-slate-600">Joueur <b>entrant</b> : choisi ci-dessus. Joueur <b>sortant</b> :
+                <select value={sortant ?? ''} onChange={(e) => setSortant(e.target.value ? Number(e.target.value) : null)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1"><option value="">— choisir —</option>{compo.filter((c) => c.joueur !== joueur).map((c) => <option key={c.joueur} value={c.joueur}>{c.numero_maillot ? `${c.numero_maillot} · ` : ''}{c.joueur_nom}</option>)}</select></p> : null}
               <p className="mb-2 text-sm text-slate-600">{AVEC_ARRIVEE.includes(type) ? "Cliquez le point de départ, puis le point d'arrivée." : "Cliquez l'endroit de l'action."} L'équipe attaque vers la droite.</p>
               <div>
                 <Terrain>

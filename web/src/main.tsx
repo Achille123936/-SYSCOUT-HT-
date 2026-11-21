@@ -30,6 +30,7 @@ import Abonnements from './pages/Abonnements';
 import { Utilisateurs, Audit } from './pages/Admin';
 import { Equipe, Assistant } from './pages/Equipe';
 import Apprentissage from './pages/Apprentissage';
+import Indicateurs from './pages/Indicateurs';
 import { Inscription, MonCompte } from './pages/Compte';
 import { JoueurForm, MatchForm } from './pages/Formulaires';
 
@@ -70,6 +71,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="abonnements" element={<Abonnements />} />
             <Route path="utilisateurs" element={<Utilisateurs />} />
             <Route path="audit" element={<Audit />} />
+            <Route path="indicateurs" element={<Indicateurs />} />
             <Route path="equipe" element={<Equipe />} />
             <Route path="assistant" element={<Assistant />} />
             <Route path="apprentissage" element={<Apprentissage />} />

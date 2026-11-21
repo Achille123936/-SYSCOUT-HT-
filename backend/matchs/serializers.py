@@ -130,11 +130,12 @@ class MatchSerializer(serializers.ModelSerializer):
 class EvenementSerializer(serializers.ModelSerializer):
     joueur_nom = serializers.CharField(source='joueur.nom_complet', read_only=True)
     type_libelle = serializers.CharField(source='get_type_action_display', read_only=True)
+    joueur_lie_nom = serializers.CharField(source='joueur_lie.nom_complet', read_only=True, default=None)
     club = serializers.SerializerMethodField()
 
     class Meta:
         model = Evenement
-        fields = ['id', 'match', 'joueur', 'joueur_nom', 'club', 'type_action', 'type_libelle', 'temps_video',
+        fields = ['id', 'match', 'joueur', 'joueur_nom', 'joueur_lie', 'joueur_lie_nom', 'club', 'type_action', 'type_libelle', 'temps_video',
                   'minute', 'zone_x', 'zone_y', 'fin_x', 'fin_y', 'resultat', 'partie_corps', 'valeur_xg',
                   'cle_idempotence', 'source', 'statut_validation', 'confiance']
         # la source et le statut ne se déclarent pas : un événement de l'IA passe par la validation d'une proposition
@@ -175,7 +176,36 @@ class EvenementSerializer(serializers.ModelSerializer):
         elif (data.get('fin_x', getattr(inst, 'fin_x', None)) is None) != (
                 data.get('fin_y', getattr(inst, 'fin_y', None)) is None):
             raise serializers.ValidationError({'fin_x': "Indiquez les deux coordonnées du point d'arrivée."})
+        self._controler_type(data, inst, match, joueur, minute)
         return data
+
+    def _controler_type(self, data, inst, match, joueur, minute):
+        """SRS §8.2 : un arrêt est celui d'un gardien ; un remplacement nomme le joueur entrant et le sortant."""
+        type_action = data.get('type_action', getattr(inst, 'type_action', None))
+        lie = data.get('joueur_lie', getattr(inst, 'joueur_lie', None))
+        compo = {c.joueur_id: c for c in match.compositions.all()}
+        if type_action == TypeAction.ARRET:
+            c = compo[joueur.id]
+            if (c.poste_occupe or joueur.poste) != 'G':
+                raise serializers.ValidationError({'joueur': 'Un arrêt est celui du gardien.'})
+        if type_action == TypeAction.REMPLACEMENT:
+            if lie is None:
+                raise serializers.ValidationError({'joueur_lie': 'Indiquez le joueur sortant.'})
+            if lie.id == joueur.id or lie.id not in compo:
+                raise serializers.ValidationError({'joueur_lie': 'Le joueur sortant doit figurer dans la composition (RG3), et différer du joueur entrant.'})
+            if compo[lie.id].club_id != compo[joueur.id].club_id:
+                raise serializers.ValidationError({'joueur_lie': 'Le joueur sortant et le joueur entrant sont de la même équipe.'})
+        else:
+            data['joueur_lie'] = None
+
+    def _appliquer_remplacement(self, evenement):
+        """Le remplacement fixe les minutes d'entrée et de sortie des deux compositions (minutes jouées recalculées)."""
+        if evenement.type_action != TypeAction.REMPLACEMENT:
+            return
+        for joueur_id, champ in ((evenement.joueur_id, 'minute_entree'), (evenement.joueur_lie_id, 'minute_sortie')):
+            c = evenement.match.compositions.get(joueur_id=joueur_id)
+            setattr(c, champ, evenement.minute)
+            c.save()
 
     def _avec_xg(self, data, inst=None):
         type_action = data.get('type_action', getattr(inst, 'type_action', None))
@@ -189,10 +219,14 @@ class EvenementSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, data):
-        return super().create(self._avec_xg(data))
+        evenement = super().create(self._avec_xg(data))
+        self._appliquer_remplacement(evenement)
+        return evenement
 
     def update(self, evenement, data):
-        return super().update(evenement, self._avec_xg(data, evenement))
+        evenement = super().update(evenement, self._avec_xg(data, evenement))
+        self._appliquer_remplacement(evenement)
+        return evenement
 
 
 class ValidationEvenementSerializer(serializers.ModelSerializer):

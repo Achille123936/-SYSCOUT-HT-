@@ -9,7 +9,7 @@ const ADRESSE_WS = SERVEUR.replace(/^http/, 'ws'); // https devient wss
 const COMPARAISON: [string, string][] = [
   ['buts', 'Buts'], ['tirs', 'Tirs'], ['tirs_cadres', 'Tirs cadrés'], ['xg', 'xG'], ['passes', 'Passes'],
   ['passes_reussies_pct', 'Passes réussies %'], ['duels_gagnes_pct', 'Duels gagnés %'], ['recuperations', 'Récupérations'],
-  ['interceptions', 'Interceptions'], ['fautes', 'Fautes'], ['cartons', 'Cartons'],
+  ['interceptions', 'Interceptions'], ['fautes', 'Fautes'], ['cartons', 'Cartons'], ['corners', 'Corners'], ['hors_jeux', 'Hors-jeu'], ['arrets', 'Arrêts'],
 ];
 
 type Etat = 'connexion' | 'direct' | 'secours';
