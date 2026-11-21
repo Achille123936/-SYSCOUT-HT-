@@ -6,8 +6,9 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework import mixins, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from comptes.models import Role
@@ -718,3 +719,26 @@ class PlaylistViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         self._exiger_auteur(instance)
         instance.delete()
+
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def matchs_en_direct(request):
+    """Page d'accueil : les matchs codés en ce moment (score, minute), visibles sans compte. Rien de plus que le
+    score et l'affiche : les statistiques, les joueurs et la vidéo restent derrière la connexion."""
+    en_cours = Match.objects.filter(etat=EtatMatch.EN_CODAGE).select_related(
+        'competition', 'club_domicile', 'club_exterieur').order_by('-verrouille_le')
+    resultat = []
+    for match in en_cours:
+        if not match.verrou_actif:
+            continue  # codage abandonné : le match n'est plus suivi
+        tableau = direct.tableau(match)
+        resultat.append({
+            'id': match.id, 'competition': match.competition.nom, 'journee': match.journee, 'stade': match.stade,
+            'domicile': {'nom': match.club_domicile.nom, 'sigle': match.club_domicile.sigle},
+            'exterieur': {'nom': match.club_exterieur.nom, 'sigle': match.club_exterieur.sigle},
+            'score': tableau['score'], 'minute': min(tableau['minute'], match.duree)})
+        if len(resultat) == 10:
+            break
+    return Response(resultat)

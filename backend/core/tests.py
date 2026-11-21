@@ -2119,3 +2119,22 @@ class Test_Sante(APITestCase):
     def test_sante_sans_connexion(self):
         r = self.client.get('/sante/')
         self.assertEqual((r.status_code, r.json()), (200, {'etat': 'ok'}))
+
+
+class Test_Matchs_En_Direct_Publics(Base):
+    """Page d'accueil : score et minute des matchs codés en ce moment, sans compte, sans autre donnée."""
+
+    def test_liste_publique_des_matchs_suivis(self):
+        match = self.creer_match(score=(0, 0))
+        self.client.force_authenticate(None)
+        self.assertEqual(self.client.get('/api/matchs-en-direct/').json(), [])  # rien n'est codé
+        self.comme(self.analyste)
+        self.client.post(f'/api/matchs/{match.id}/ouvrir-codage/')
+        self.client.force_authenticate(None)
+        r = self.client.get('/api/matchs-en-direct/')
+        self.assertEqual(r.status_code, 200)
+        (m,) = r.json()
+        self.assertEqual((m['id'], m['score'], m['minute']), (match.id, [0, 0], 0))
+        self.assertEqual(set(m), {'id', 'competition', 'journee', 'stade', 'domicile', 'exterieur', 'score', 'minute'})
+        Match.objects.filter(pk=match.id).update(verrouille_le=timezone.now() - timezone.timedelta(hours=3))
+        self.assertEqual(self.client.get('/api/matchs-en-direct/').json(), [])  # codage abandonné

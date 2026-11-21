@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { api } from '../api';
 import { useAuth } from '../auth';
 import { C, F } from '../theme';
+import MatchsEnDirect from '../components/MatchsEnDirect';
 import { Ecran, Etat, Alert, Card, Info, Field, Ligne, Avatar, Badge, Colonnes, useChargement, useLarge } from '../components/ui';
 import { dateFR } from '../constantes';
 
@@ -55,6 +56,7 @@ export default function AccueilScreen({ navigation }) {
   const abonnement = utilisateur.abonnement;
   const large = useLarge();
   const sportif = a('ADMIN', 'ANALYSTE', 'SCOUT', 'DIRECTEUR') || (a('CLIENT') && !!abonnement);
+  const voirDirect = sportif || a('CLUB_ADMIN', 'COACH');
 
   return (
     <Ecran titre={`Bonjour ${utilisateur.prenom}`} sousTitre={`${utilisateur.role_libelle}${donnees?.saison ? ` · saison ${donnees.saison.libelle}` : ''}`}>
@@ -71,6 +73,10 @@ export default function AccueilScreen({ navigation }) {
               </Pressable>
             ))}
           </View>
+
+          <Card title="Matchs en direct">
+            <MatchsEnDirect texteVide="Aucun match en direct pour le moment." surOuvrir={voirDirect ? (m) => navigation.navigate('Direct', { id: m.id }) : undefined} />
+          </Card>
 
           <Colonnes>
             {donnees.resultats.length ? (

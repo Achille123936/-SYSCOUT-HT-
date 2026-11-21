@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import MatchsEnDirect from '../components/MatchsEnDirect';
 import { api } from '../api';
 import { C, F } from '../theme';
 import { htg } from '../constantes';
@@ -129,6 +130,19 @@ export default function VitrineScreen({ surConnexion, surInscription }) {
               ))}
             </View>
           ) : null}
+        </View>
+      </View>
+
+      {/* matchs codés en ce moment : score et minute, sans compte */}
+      <View style={[st.section, { paddingVertical: 36, borderBottomWidth: 1, borderBottomColor: D.trait }]} {...repere('direct')}>
+        <View style={st.cadre}>
+          <Text style={[st.sur, { textAlign: 'center' }]}>MATCHS EN DIRECT</Text>
+          <View style={{ marginTop: 18, alignItems: 'center' }}>
+            <MatchsEnDirect sombre />
+          </View>
+          <Pressable onPress={surConnexion} accessibilityRole="button" style={{ marginTop: 14, alignSelf: 'center' }}>
+            <Text style={st.lien}>Connectez-vous pour suivre les statistiques en direct ›</Text>
+          </Pressable>
         </View>
       </View>
 

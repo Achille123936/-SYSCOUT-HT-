@@ -13,4 +13,5 @@ router.register('annotations', views.AnnotationViewSet, basename='annotation')
 router.register('playlists', views.PlaylistViewSet, basename='playlist')
 
 urlpatterns = [
+    path('matchs-en-direct/', views.matchs_en_direct, name='matchs-en-direct'),
 ] + router.urls
