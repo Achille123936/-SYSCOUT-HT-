@@ -51,3 +51,14 @@ Les flux HLS (`.m3u8`) se lisent dans tous les navigateurs (hls.js) ; un flux RT
   désactiver ces mots de passe avant d'ouvrir le site au public.
 - **Moteur de vision** (`vision/`) : service à part, à lancer sur une machine avec GPU ; il se connecte à l'adresse
   publique de l'API.
+
+## Variante : API sur Railway (sans Docker)
+
+`backend/railway.json` décrit la construction et le démarrage (même commande que Render).
+
+1. Sur railway.com : **New Project › Deploy from GitHub repo**, choisir ce dépôt, puis dans **Settings › Root Directory** mettre `backend`.
+2. Dans **Variables**, saisir : `SYSCOUT_DEBUG=0`, `SYSCOUT_SECRET_KEY` (longue valeur aléatoire), `SYSCOUT_DB=postgres`, `PGHOST`, `PGDATABASE`,
+   `PGUSER`, `PGPASSWORD`, `PGPORT=5432`, `PGSSLMODE=require` (valeurs Neon de `backend/.env`), et `PYTHON_VERSION=3.12`.
+3. **Settings › Networking › Generate Domain** : noter l'adresse (ex. `syscout-api.up.railway.app`).
+4. Ajouter `SYSCOUT_HOSTS` = cette adresse sans `https://`, et `SYSCOUT_CORS` = l'adresse du site web (ex. `https://syscout-ht.netlify.app`).
+5. Sur le site web, `VITE_API_URL` = `https://<adresse Railway>`, puis reconstruire et redéployer le site.

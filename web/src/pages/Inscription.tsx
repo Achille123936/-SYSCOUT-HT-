@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import PanneauAuth from '../components/PanneauAuth';
+import Pied from '../components/Pied';
 import { Alerte, Bouton, Champ } from '../components/ui';
 
 const AVANTAGES: [string, string][] = [
@@ -70,7 +71,8 @@ export default function Inscription() {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <>
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       <PanneauAuth titre="Rejoignez la plateforme du football haïtien." avantages={AVANTAGES} />
 
       <main className="flex items-center justify-center bg-white px-5 py-10 sm:px-10">
@@ -141,5 +143,7 @@ export default function Inscription() {
         </div>
       </main>
     </div>
+    <Pied />
+    </>
   );
 }

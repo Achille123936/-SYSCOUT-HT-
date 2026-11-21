@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import PanneauAuth from '../components/PanneauAuth';
+import Pied from '../components/Pied';
 import { Alerte, Bouton, Champ } from '../components/ui';
 
 const AVANTAGES: [string, string][] = [
@@ -33,7 +34,8 @@ export default function Connexion() {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <>
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       <PanneauAuth titre="Content de vous revoir." avantages={AVANTAGES} />
       <main className="flex items-center justify-center bg-white px-5 py-10 sm:px-10">
         <div className="w-full max-w-md">
@@ -55,5 +57,7 @@ export default function Connexion() {
         </div>
       </main>
     </div>
+    <Pied />
+    </>
   );
 }
