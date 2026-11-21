@@ -36,7 +36,7 @@ Autre serveur : `VITE_API_URL=https://syscout-api.onrender.com npm run build` (v
 | `/app/clubs`, `/competitions`, `/cameras`, `/abonnements` | référentiel, caméras, abonnements, factures et paiements |
 | `/app/utilisateurs`, `/audit`, `/compte` | comptes et droits, journal et sauvegardes, mot de passe |
 
-## Interface « Scout » ()
+## Interface « Scout » (route /scout)
 
 Trois écrans à l'aspect d'une plateforme de scouting vidéo (fond gris très clair, azur `#29ABE2`, bleu des liens `#1F8FD0`,
 orange des étiquettes `#F28C28`, terrain vert), avec une recherche d'un joueur ou d'une équipe en haut de page :
