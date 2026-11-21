@@ -2,6 +2,7 @@
 import time
 import uuid
 
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -77,6 +78,18 @@ class MatchViewSet(AuditMixin, viewsets.ModelViewSet):
                             status=status.HTTP_423_LOCKED)
         return None
 
+    @staticmethod
+    def _controler_fichier_video(fichier):
+        """SRS §18 : un fichier importé a un type et une taille acceptés."""
+        p = settings.SYSCOUT
+        nom = (fichier.name or '').lower()
+        if not nom.endswith(p['VIDEO_EXTENSIONS']):
+            raise ValidationError({'video': f"Format non accepté. Formats acceptés : {', '.join(p['VIDEO_EXTENSIONS'])}."})
+        if fichier.size > p['VIDEO_MAX_MO'] * 1024 * 1024:
+            raise ValidationError({'video': f"Fichier trop volumineux ({round(fichier.size / 1048576)} Mo) : {p['VIDEO_MAX_MO']} Mo au plus."})
+        if fichier.size == 0:
+            raise ValidationError({'video': 'Le fichier est vide.'})
+
     @action(detail=True, methods=['post'], url_path='importer-video')
     def importer_video(self, request, pk=None):
         """CU06 étapes 7-8 : la vidéo est stockée sur le NAS et le match passe à « Vidéo importée »."""
@@ -87,6 +100,7 @@ class MatchViewSet(AuditMixin, viewsets.ModelViewSet):
         if not fichier and not adresse:
             raise ValidationError({'video': 'Choisissez un fichier vidéo ou indiquez son adresse.'})
         if fichier:
+            self._controler_fichier_video(fichier)
             match.video, match.video_url = fichier, ''
         else:
             match.video, match.video_url = None, adresse

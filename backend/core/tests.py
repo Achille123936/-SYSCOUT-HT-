@@ -2217,3 +2217,44 @@ class Test_SRS_2_1_Indicateurs(AvecStatistiques):
         self.assertEqual(d['qualite_donnees']['part_validee_pct'], 100.0)
         self.assertIsNone(d['performance_ia']['f1'])  # non mesurable par le serveur : jamais inventé
         self.assertIn('mesure', d['disponibilite'])
+
+
+class Test_Import_Video(Base):
+    """SRS §18 : validation du type et de la taille d'une vidéo importée ; l'adresse d'une vidéo hébergée est aussi acceptée."""
+
+    def setUp(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        self.fichier = lambda nom, contenu=b'x' * 2048: SimpleUploadedFile(nom, contenu, content_type='video/mp4')
+        self.match = self.creer_match(etat=EtatMatch.PLANIFIE)
+        Match.objects.filter(pk=self.match.pk).update(video_url='')
+        self.comme(self.analyste)
+        self.url = f'/api/matchs/{self.match.id}/importer-video/'
+
+    def test_fichier_accepte_et_etat(self):
+        from django.test import override_settings
+        import tempfile
+        with tempfile.TemporaryDirectory() as dossier, override_settings(MEDIA_ROOT=dossier):
+            r = self.client.post(self.url, {'video': self.fichier('match.mp4')}, format='multipart')
+            self.assertEqual(r.status_code, 200, r.data)
+            self.assertEqual(r.data['etat'], 'VIDEO_IMPORTEE')
+            self.assertTrue(r.data['video_lecture'])
+
+    def test_type_et_taille_refuses(self):
+        r = self.client.post(self.url, {'video': self.fichier('script.exe')}, format='multipart')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('Format non accepté', str(r.data))
+        self.assertEqual(self.client.post(self.url, {'video': self.fichier('vide.mp4', b'')}, format='multipart').status_code, 400)
+        from django.conf import settings
+        from django.test import override_settings
+        with override_settings(SYSCOUT={**settings.SYSCOUT, 'VIDEO_MAX_MO': 0}):
+            r = self.client.post(self.url, {'video': self.fichier('grosse.mp4')}, format='multipart')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('trop volumineux', str(r.data))
+
+    def test_adresse_et_remplacement_interdit_apres_codage(self):
+        r = self.client.post(self.url, {'video_url': 'https://exemple.ht/match.mp4'}, format='json')
+        self.assertEqual((r.status_code, r.data['etat']), (200, 'VIDEO_IMPORTEE'))
+        Match.objects.filter(pk=self.match.pk).update(etat=EtatMatch.EN_CODAGE)
+        self.assertEqual(self.client.post(self.url, {'video_url': 'https://exemple.ht/autre.mp4'}, format='json').status_code, 400)
+        self.comme(self.scout)
+        self.assertEqual(self.client.post(self.url, {'video_url': 'https://exemple.ht/x.mp4'}, format='json').status_code, 403)

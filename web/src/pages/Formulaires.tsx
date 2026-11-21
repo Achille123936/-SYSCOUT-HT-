@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, televerser } from '../lib/api';
+import { controlerFichier, EXTENSIONS, TAILLE_MAX_MO } from '../components/ImporterVideo';
 import { useChargement } from '../lib/hooks';
 import { Alerte, Bouton, Card, Champ, Choix, Chargement, Titre } from '../components/ui';
 
@@ -79,6 +80,8 @@ export function MatchForm() {
   const navigate = useNavigate();
   const [f, setF] = useState<any>({ competition: '', journee: '1', date_match: '', stade: '', club_domicile: '', club_exterieur: '', duree: '90', video_url: '' });
   const [compo, setCompo] = useState<Record<number, { club: number; titulaire: boolean; numero: string }>>({});
+  const [fichierVideo, setFichierVideo] = useState<File | null>(null);
+  const [progres, setProgres] = useState<number | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const competitions = useChargement<any[]>(() => api.tout('/competitions/'), []);
   const existant = useChargement<any>(() => (id ? api.get(`/matchs/${id}/`) : null), [id]);
@@ -101,9 +104,15 @@ export function MatchForm() {
       compositions: Object.entries(compo).map(([joueur, c]) => ({ joueur: Number(joueur), club: c.club, est_titulaire: c.titulaire, numero_maillot: c.numero ? Number(c.numero) : null })) };
     try {
       const r = id ? await api.patch(`/matchs/${id}/`, corps) : await api.post('/matchs/', corps);
-      if (f.video_url && f.video_url !== existant.donnees?.video_url) await api.post(`/matchs/${r.id}/importer-video/`, { video_url: f.video_url });
+      if (fichierVideo) {
+        setProgres(0);
+        const corps = new FormData();
+        corps.append('video', fichierVideo);
+        await televerser(`/matchs/${r.id}/importer-video/`, corps, setProgres).promesse;
+        setProgres(null);
+      } else if (f.video_url && f.video_url !== existant.donnees?.video_url) await api.post(`/matchs/${r.id}/importer-video/`, { video_url: f.video_url });
       navigate(`/app/matchs/${r.id}`);
-    } catch (e) { setErreur((e as Error).message); }
+    } catch (e) { setProgres(null); setErreur((e as Error).message); }
   };
   const colonne = (club: number, nom: string, liste: any[] | null) => (
     <Card titre={`Composition · ${nom}`}>
@@ -137,7 +146,14 @@ export function MatchForm() {
             <Choix libelle="Équipe visiteuse" value={f.club_exterieur} onChange={(e) => maj('club_exterieur', e.target.value)}><option value="">— choisir —</option>{clubsDeLaCompetition.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}</Choix>
             <Champ libelle="Stade" value={f.stade} onChange={(e) => maj('stade', e.target.value)} />
             <Champ libelle="Durée (minutes)" type="number" min={1} value={f.duree} onChange={(e) => maj('duree', e.target.value)} />
-            <div className="sm:col-span-2"><Champ libelle="Adresse de la vidéo (MP4 ou flux web)" type="url" placeholder="https://…" value={f.video_url} onChange={(e) => maj('video_url', e.target.value)} /></div>
+            <div className="sm:col-span-2"><Champ libelle="Adresse de la vidéo (MP4 ou flux web)" type="url" placeholder="https://…" value={f.video_url} onChange={(e) => maj('video_url', e.target.value)} disabled={!!fichierVideo} /></div>
+            <div className="sm:col-span-3">
+              <label className="block text-sm"><span className="mb-1 block font-medium text-slate-700">…ou un fichier vidéo ({EXTENSIONS.join(' ')}, {TAILLE_MAX_MO} Mo au plus)</span>
+                <input type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.m4v,.mov,.webm,.mkv" aria-label="Fichier vidéo"
+                  onChange={(e) => { const fi = e.target.files?.[0] || null; const err = fi ? controlerFichier(fi) : null; setErreur(err); setFichierVideo(err ? null : fi); if (err) e.target.value = ''; }} /></label>
+              {fichierVideo ? <p className="mt-1 text-xs text-slate-500">{fichierVideo.name} sera envoyé à l'enregistrement du match.</p> : null}
+              {progres !== null ? <div className="mt-2 h-2 max-w-sm overflow-hidden rounded-full bg-slate-200" role="status" aria-label={`Envoi ${progres} %`}><div className="h-full bg-brand-green" style={{ width: `${progres}%` }} /></div> : null}
+            </div>
           </div></div></Card>
         {f.club_domicile && f.club_exterieur ? <div className="grid gap-6 lg:grid-cols-2">{colonne(Number(f.club_domicile), clubsDeLaCompetition.find((c) => String(c.id) === String(f.club_domicile))?.nom || 'Domicile', effD.donnees)}{colonne(Number(f.club_exterieur), clubsDeLaCompetition.find((c) => String(c.id) === String(f.club_exterieur))?.nom || 'Visiteuse', effE.donnees)}</div> : null}
         <div className="flex gap-3"><Bouton onClick={enregistrer} disabled={!f.competition || !f.club_domicile || !f.club_exterieur || !f.date_match}>Enregistrer</Bouton><Bouton genre="secondaire" onClick={() => navigate(-1)}>Annuler</Bouton></div>

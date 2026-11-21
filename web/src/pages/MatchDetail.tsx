@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { TON_ETAT, dateHeureFR } from '../lib/format';
 import { useChargement } from '../lib/hooks';
 import { useState } from 'react';
+import ImporterVideo from '../components/ImporterVideo';
 import { Alerte, Badge, Bouton, Card, Etat, Titre } from '../components/ui';
 
 // Fiche d'un match : état, compositions et accès au direct, aux pistes de l'IA.
@@ -14,6 +15,7 @@ export default function MatchDetail() {
   const m = t.donnees;
   const analyste = a('ADMIN', 'ANALYSTE');
   const [erreur, setErreur] = useState<string | null>(null);
+  const [importer, setImporter] = useState(false);
   const corriger = async () => { if (!window.confirm("Rouvrir le codage ? Les statistiques du match sont retirées de la saison jusqu'à la nouvelle validation.")) return; try { await api.post(`/matchs/${id}/corriger/`); t.recharger(); } catch (e) { setErreur((e as Error).message); } };
   const annuler = async () => { if (!window.confirm('Annuler ce match ?')) return; try { await api.post(`/matchs/${id}/annuler/`); t.recharger(); } catch (e) { setErreur((e as Error).message); } };
 
@@ -38,6 +40,12 @@ export default function MatchDetail() {
             {analyste && !['CODE', 'STATS_PUBLIEES', 'ANNULE'].includes(m.etat) ? <Bouton genre="danger" onClick={annuler}>Annuler le match</Bouton> : null}
           </div>
           <Alerte ton="rouge">{erreur}</Alerte>
+          <Card titre="Vidéo du match" className="mb-6"
+            droite={analyste && ['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <Bouton onClick={() => setImporter(true)}>{m.video_lecture ? 'Remplacer la vidéo' : 'Importer une vidéo'}</Bouton> : undefined}>
+            {m.video_lecture ? <video src={m.video_lecture} controls className="max-h-80 w-full rounded-lg bg-black" /> : <p className="text-sm text-slate-500">Aucune vidéo pour ce match.</p>}
+            {analyste && !['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <p className="mt-3 text-xs text-slate-400">Le codage a commencé : la vidéo ne peut plus être remplacée.</p> : null}
+          </Card>
+          <ImporterVideo ouvert={importer} onFermer={() => setImporter(false)} matchId={m.id} onFait={() => t.recharger()} />
           <div className="grid gap-6 lg:grid-cols-2">
             {[[m.club_domicile, m.domicile_nom], [m.club_exterieur, m.exterieur_nom]].map(([club, nom]) => (
               <Card key={club} titre={`Composition · ${nom}`}>

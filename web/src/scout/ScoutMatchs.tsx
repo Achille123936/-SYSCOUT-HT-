@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api, type Page } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import ImporterVideo from '../components/ImporterVideo';
 import { TYPES_ACTION, dateFR } from '../lib/format';
 import { useChargement } from '../lib/hooks';
 import VideoAnnotable from '../components/VideoAnnotable';
@@ -29,6 +31,8 @@ export default function ScoutMatchs() {
   const [temps, setTemps] = useState(0);
   const [nom, setNom] = useState('');
   const [message, setMessage] = useState<string | null>(null);
+  const { a } = useAuth();
+  const [importer, setImporter] = useState(false);
 
   const competitions = useChargement<any[]>(() => api.tout('/competitions/'), []);
   const matchs = useChargement<Page<any>>(() => api.get('/matchs/', { joueur, club, competition, page, page_size: 50 }), [joueur, club, competition, page]);
@@ -98,7 +102,7 @@ export default function ScoutMatchs() {
       </div>
 
       <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-        <Panneau titre="Liste des matchs" droite={<BoutonAzur onClick={() => setFiltres(!filtres)}>Filtres</BoutonAzur>}>
+        <Panneau titre="Liste des matchs" droite={<span className="flex gap-2">{a('ADMIN', 'ANALYSTE') ? <BoutonAzur onClick={() => setImporter(true)}>Importer une vidéo</BoutonAzur> : null}<BoutonAzur onClick={() => setFiltres(!filtres)}>Filtres</BoutonAzur></span>}>
           {filtres ? (
             <div className="mb-3 flex flex-wrap items-center gap-3 border border-wy-bord bg-wy-fond p-2 text-[12px]">
               <label className="flex items-center gap-2">Compétition
@@ -122,6 +126,7 @@ export default function ScoutMatchs() {
             {liste.length < total ? <BoutonAzur onClick={() => setPage(page + 1)}>Matchs suivants ›</BoutonAzur> : null}</div>
         </Panneau>
 
+        <ImporterVideo ouvert={importer} onFermer={() => setImporter(false)} onFait={(mt) => { setPage(1); matchs.recharger(); choisir(mt.id); }} />
         <section className="min-w-0 border border-wy-bord bg-white">
           <header className="flex items-center justify-between gap-3 px-4 py-2.5">
             <h2 className="truncate text-[14px] font-bold uppercase">{titre || 'Choisissez un match'}</h2>

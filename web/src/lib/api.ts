@@ -108,3 +108,26 @@ export async function exporterPdf(demande: Record<string, unknown>) {
     throw e;
   }
 }
+
+/** Envoi d'un fichier avec suivi de la progression (fetch n'en donne pas).  interrompt l'envoi. */
+export function televerser<T = any>(chemin: string, corps: FormData, surProgression?: (pourcent: number) => void): { promesse: Promise<T>; annuler: () => void } {
+  const xhr = new XMLHttpRequest();
+  const promesse = new Promise<T>((resolve, reject) => {
+    xhr.open('POST', API + chemin);
+    xhr.setRequestHeader('Accept', 'application/json');
+    if (jeton) xhr.setRequestHeader('Authorization', `Token ${jeton}`);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable) surProgression?.(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onerror = () => reject(new ErreurApi(`Serveur injoignable (${SERVEUR}). Vérifiez la connexion.`, 0, null));
+    xhr.onabort = () => reject(new ErreurApi('Envoi annulé.', 0, null));
+    xhr.onload = () => {
+      let donnees: any = null;
+      try { donnees = xhr.responseText ? JSON.parse(xhr.responseText) : null; } catch { donnees = xhr.responseText; }
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(donnees as T);
+      const e = new ErreurApi(message(donnees, xhr.status), xhr.status, donnees);
+      if (xhr.status === 401 && jeton) surSessionFermee(e.message);
+      reject(e);
+    };
+    xhr.send(corps);
+  });
+  return { promesse, annuler: () => xhr.abort() };
+}

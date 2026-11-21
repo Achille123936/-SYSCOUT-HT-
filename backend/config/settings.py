@@ -149,5 +149,7 @@ SYSCOUT = {
     'TAUX_TCA': 0.10,                # taxe sur le chiffre d'affaires
     'VERROU_MINUTES': 30,            # un verrou de codage inactif peut être repris
     'DUREE_TICKET_EXPORT': 120,      # secondes de validité d'un lien d'export PDF
+    'VIDEO_MAX_MO': int(os.environ.get('SYSCOUT_VIDEO_MAX_MO', '2048')),   # SRS §18 : taille maximale d'une vidéo importée
+    'VIDEO_EXTENSIONS': ('.mp4', '.m4v', '.mov', '.webm', '.mkv'),         # SRS §18 : types de fichiers acceptés
     'SAUVEGARDES': [BASE_DIR / 'sauvegardes' / 'disque_externe', BASE_DIR / 'sauvegardes' / 'cloud'],
 }

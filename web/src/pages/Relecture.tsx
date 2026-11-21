@@ -6,6 +6,7 @@ import { TYPES_ACTION } from '../lib/format';
 import { useChargement } from '../lib/hooks';
 import DessinSvg, { FORMES, type Dessin, type Forme, type Point } from '../components/Dessins';
 import VideoAnnotable from '../components/VideoAnnotable';
+import ImporterVideo from '../components/ImporterVideo';
 import { Alerte, Badge, Bouton, Card, Champ, Choix, Chargement, Titre, Vide } from '../components/ui';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -37,6 +38,7 @@ export default function Relecture() {
   const [suiviJoueur, setSuiviJoueur] = useState('');
   const [trace, setTrace] = useState<{ t: number; x: number; y: number }[]>([]);
   const [temps, setTemps] = useState(0);
+  const [importer, setImporter] = useState(false);
   const match = useChargement<any>(() => api.get(`/matchs/${id}/`), [id]);
   const evts = useChargement<any>(() => api.get('/evenements/', { match: id, page_size: 1000 }), [id]);
   const lists = useChargement<any[]>(() => api.get('/playlists/', { match: id }).then((r: any) => (Array.isArray(r) ? r : r.results)), [id]);
@@ -116,6 +118,7 @@ export default function Relecture() {
         <div className="space-y-6 lg:col-span-3">
           <Card titre="Vidéo">
             <div className="mb-3 space-y-2"><Alerte ton="rouge">{erreur}</Alerte><Alerte ton="vert">{info}</Alerte></div>
+            {!m.video_lecture && analyste && ['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <div className="mb-3"><Bouton onClick={() => setImporter(true)}>Importer une vidéo</Bouton><ImporterVideo ouvert={importer} onFermer={() => setImporter(false)} matchId={m.id} onFait={() => match.recharger()} /></div> : null}
             <VideoAnnotable src={m.video_lecture || undefined} refVideo={video} onTemps={setTemps} capture={mode !== 'lecture'} onPoint={surPoint} onGlisser={surGlisser} onFin={surFin} rendu={rendu} aide={aide} />
             {analyste && m.video_lecture ? (
               <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
