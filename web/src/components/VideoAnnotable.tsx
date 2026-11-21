@@ -5,12 +5,12 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).
 
 /** Vidéo avec une couche SVG en pourcentages de l'image (0 à 100 sur chaque axe) et ses propres commandes de lecture.
  *  `capture` : la couche reçoit les clics (le curseur devient une croix) au lieu de les laisser à la vidéo. */
-export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin, rendu, refVideo, onTemps, aide }: {
+export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin, rendu, refVideo, onTemps, aide, habillage }: {
   src?: string; capture?: boolean;
   onPoint?: (x: number, y: number, bas: boolean) => void; // bas : le bouton vient d'être pressé
   onGlisser?: (x: number, y: number) => void; onFin?: () => void;
   rendu?: (taille: Taille, temps: number) => ReactNode;
-  refVideo?: MutableRefObject<HTMLVideoElement | null>; onTemps?: (t: number) => void; aide?: string;
+  refVideo?: MutableRefObject<HTMLVideoElement | null>; onTemps?: (t: number) => void; aide?: string; habillage?: ReactNode;
 }) {
   const video = useRef<HTMLVideoElement | null>(null);
   const boite = useRef<HTMLDivElement>(null);
@@ -48,6 +48,7 @@ export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin
           <defs><marker id="pointe" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="context-stroke" /></marker></defs>
           {rendu?.(taille, temps)}
         </svg>
+        {habillage ? <div className="pointer-events-none absolute left-3 top-3">{habillage}</div> : null}
       </div>
       <div className="mt-2 flex items-center gap-2 text-sm">
         <button className="rounded border border-slate-300 px-2 py-1" onClick={() => aller(temps - 5)} aria-label="Reculer de 5 secondes">−5 s</button>

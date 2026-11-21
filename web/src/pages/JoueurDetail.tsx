@@ -31,7 +31,7 @@ export default function JoueurDetail() {
       {d ? (
         <>
           <Titre titre={j.nom_complet} sous={`${j.poste_libelle} · ${j.club_nom} · ${j.age} ans${d.saison ? ` · saison ${d.saison.libelle}` : ''}`}
-            droite={<div className="flex flex-wrap gap-2"><Link to={`/app/comparaison?ids=${j.id}`}><Bouton genre="secondaire">Comparer</Bouton></Link>{a('ADMIN', 'SCOUT', 'DIRECTEUR', 'CLIENT', 'CLUB_ADMIN', 'COACH') ? <Bouton genre="secondaire" onClick={ouvrirListes}>+ Shortlist</Bouton> : null}{a('ADMIN', 'ANALYSTE', 'CLUB_ADMIN') ? <Link to={`/app/joueurs/${j.id}/modifier`}><Bouton genre="secondaire">Modifier</Bouton></Link> : null}<Bouton onClick={exporter}>Exporter en PDF</Bouton></div>} />
+            droite={<div className="flex flex-wrap gap-2"><Link to={`/scout/joueur/${j.id}`}><Bouton genre="secondaire">Vue Scout</Bouton></Link><Link to={`/app/comparaison?ids=${j.id}`}><Bouton genre="secondaire">Comparer</Bouton></Link>{a('ADMIN', 'SCOUT', 'DIRECTEUR', 'CLIENT', 'CLUB_ADMIN', 'COACH') ? <Bouton genre="secondaire" onClick={ouvrirListes}>+ Shortlist</Bouton> : null}{a('ADMIN', 'ANALYSTE', 'CLUB_ADMIN') ? <Link to={`/app/joueurs/${j.id}/modifier`}><Bouton genre="secondaire">Modifier</Bouton></Link> : null}<Bouton onClick={exporter}>Exporter en PDF</Bouton></div>} />
           <div className="space-y-6">
             <Alerte ton="rouge">{message}</Alerte>
             <div className="grid gap-6 lg:grid-cols-3">

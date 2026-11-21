@@ -29,7 +29,7 @@ export function Equipe() {
             </div>
             <div className="grid gap-6 lg:grid-cols-2">
               <Card titre="Derniers résultats">
-                {d.resultats.length ? <ul className="divide-y divide-slate-100 text-sm">{d.resultats.map((r: any) => <li key={r.id} className="py-2"><Link className="flex items-center gap-3 hover:text-brand-blue" to={`/app/matchs/${r.id}`}><span className="flex-1 truncate text-right">{r.domicile}</span><span className="font-bold text-navy">{r.score}</span><span className="flex-1 truncate">{r.exterieur}</span></Link></li>)}</ul> : <Vide>Aucun résultat.</Vide>}
+                {d.resultats.length ? <ul className="divide-y divide-slate-100 text-sm">{d.resultats.map((r: any) => <li key={r.id} className="py-2"><Link className="flex items-center gap-3 hover:text-brand-blue" to={`/app/matchs/${r.id}`}><span className="w-24 text-slate-500">J{r.journee}</span><span className="flex-1 truncate">{r.domicile ? `${d.club.nom} - ${r.adversaire}` : `${r.adversaire} - ${d.club.nom}`}</span><span className="font-bold text-navy">{r.score}</span><span className={`w-6 text-center text-xs font-bold ${r.issue === "V" ? "text-emerald-600" : r.issue === "D" ? "text-red-600" : "text-slate-500"}`}>{r.issue}</span></Link></li>)}</ul> : <Vide>Aucun résultat.</Vide>}
               </Card>
               <Card titre="Points forts">
                 <p className="text-sm">{d.meilleur_buteur ? <>Meilleur buteur : <b>{d.meilleur_buteur.nom}</b> ({d.meilleur_buteur.buts} buts)</> : 'Pas encore de buteur.'}</p>

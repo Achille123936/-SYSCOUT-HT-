@@ -104,7 +104,7 @@ export default function Codage() {
 
   if (!m) return <Chargement />;
   const utilisable = ['VIDEO_IMPORTEE', 'EN_CODAGE'].includes(m.etat);
-  const liste: any[] = evts.donnees?.results || [];
+  const liste: any[] = Array.isArray(evts.donnees) ? evts.donnees : evts.donnees?.results || []; // la liste des événements n'est pas paginée
 
   return (
     <>

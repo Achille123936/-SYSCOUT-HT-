@@ -13,6 +13,7 @@ export const MENU: Entree[] = [
   { chemin: '/app/comparaison', libelle: 'Comparaison', roles: SPORTIFS, groupe: 'Analyse' },
   { chemin: '/app/apprentissage', libelle: 'Apprentissage', roles: SPORTIFS, groupe: 'Analyse' },
   { chemin: '/app/assistant', libelle: 'Assistant', roles: SPORTIFS, groupe: 'Analyse' },
+  { chemin: '/scout', libelle: 'Interface Scout (vidéo)', roles: SPORTIFS, groupe: 'Scouting' },
   { chemin: '/app/rapports', libelle: 'Rapports', roles: SPORTIFS, groupe: 'Scouting' },
   { chemin: '/app/shortlists', libelle: 'Shortlists', roles: ['ADMIN', 'SCOUT', 'DIRECTEUR', 'CLIENT', 'CLUB_ADMIN', 'COACH'], groupe: 'Scouting' },
   { chemin: '/app/clubs', libelle: 'Clubs', roles: ['ADMIN', 'ANALYSTE', 'SCOUT', 'DIRECTEUR', 'AGENT'], groupe: 'Gestion' },

@@ -46,7 +46,7 @@ export default function Relecture() {
   const calibre = coins.length === 4;
 
   const filtres = useMemo(() => {
-    const t = ((evts.donnees?.results || []) as any[]).filter((e) => (!type || e.type_action === type) && (!joueur || String(e.joueur) === joueur));
+    const t = ((Array.isArray(evts.donnees) ? evts.donnees : evts.donnees?.results || []) as any[]).filter((e) => (!type || e.type_action === type) && (!joueur || String(e.joueur) === joueur));
     return [...t].sort((x, y) => x.temps_video - y.temps_video);
   }, [evts.donnees, type, joueur]);
 

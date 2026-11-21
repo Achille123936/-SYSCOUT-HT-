@@ -36,6 +36,20 @@ Autre serveur : `VITE_API_URL=https://syscout-api.onrender.com npm run build` (v
 | `/app/clubs`, `/competitions`, `/cameras`, `/abonnements` | référentiel, caméras, abonnements, factures et paiements |
 | `/app/utilisateurs`, `/audit`, `/compte` | comptes et droits, journal et sauvegardes, mot de passe |
 
+## Interface « Scout » ()
+
+Trois écrans à l'aspect d'une plateforme de scouting vidéo (fond gris très clair, azur `#29ABE2`, bleu des liens `#1F8FD0`,
+orange des étiquettes `#F28C28`, terrain vert), avec une recherche d'un joueur ou d'une équipe en haut de page :
+
+- `/scout/joueur/:id` : informations, statistiques (disque des actions, position moyenne sur le terrain), vidéos par type d'action,
+  compétitions, derniers matchs ; onglets Events, Stats, Career, Reports, Scouting.
+- `/scout/matchs` (`?joueur=`, `?club=`, `?type=`, `?match=`) : liste des matchs avec vidéo, lecteur avec le score en surimpression,
+  mi-temps, moments du match (buts, moments forts, listes enregistrées), capture d'écran et export CSV.
+- `/scout/equipe/:id` : informations, bilan, vidéos, classements, derniers matchs ; onglets Squad, Events, Stats, Reports,
+  Team assessments (analyse tactique).
+
+Mêmes données et mêmes droits que le reste du site (aucune API de plus).
+
 ## Fonctions ajoutées depuis l'application mobile
 
 - **Caméras** (`/app/cameras`) : création et modification (l'adresse du flux ne se relit pas : vide = inchangée), vérification,

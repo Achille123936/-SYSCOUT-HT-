@@ -31,6 +31,10 @@ import { Utilisateurs, Audit } from './pages/Admin';
 import { Equipe, Assistant } from './pages/Equipe';
 import Apprentissage from './pages/Apprentissage';
 import Indicateurs from './pages/Indicateurs';
+import CadreScout from './scout/CadreScout';
+import ScoutJoueur from './scout/ScoutJoueur';
+import ScoutMatchs from './scout/ScoutMatchs';
+import ScoutEquipe from './scout/ScoutEquipe';
 import { MonCompte } from './pages/Compte';
 import Inscription from './pages/Inscription';
 import { JoueurForm, MatchForm } from './pages/Formulaires';
@@ -77,6 +81,12 @@ createRoot(document.getElementById('root')!).render(
             <Route path="assistant" element={<Assistant />} />
             <Route path="apprentissage" element={<Apprentissage />} />
             <Route path="compte" element={<MonCompte />} />
+          </Route>
+          <Route path="/scout" element={<CadreScout />}>
+            <Route index element={<Navigate to="/scout/matchs" replace />} />
+            <Route path="matchs" element={<ScoutMatchs />} />
+            <Route path="joueur/:id" element={<ScoutJoueur />} />
+            <Route path="equipe/:id" element={<ScoutEquipe />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
