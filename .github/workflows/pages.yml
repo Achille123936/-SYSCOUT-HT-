@@ -1,0 +1,57 @@
+name: Application web sur GitHub Pages
+
+# Publie l'application web (Expo) à chaque envoi sur main qui touche syscout-ht/.
+# Réglages une seule fois : Settings › Pages › Source = « GitHub Actions », et
+# Settings › Secrets and variables › Actions › Variables › SYSCOUT_API_URL = adresse de l'API (https://...).
+on:
+  push:
+    branches: [main]
+    paths: ['syscout-ht/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: syscout-ht
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: syscout-ht/package-lock.json
+      - run: npm ci
+      - name: Adresse du site (le dépôt est servi sous /<nom du dépôt>/)
+        run: node -e "const fs=require('fs'),j=JSON.parse(fs.readFileSync('app.json','utf8'));j.expo.experiments={baseUrl:'/'+process.env.DEPOT};fs.writeFileSync('app.json',JSON.stringify(j,null,2))"
+        env:
+          DEPOT: ${{ github.event.repository.name }}
+      - name: Construire l'application web
+        run: npx expo export --platform web
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.SYSCOUT_API_URL }}
+      - name: Repli pour les adresses directes (une seule page)
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: syscout-ht/dist
+
+  deployer:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
