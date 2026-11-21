@@ -1,4 +1,6 @@
+import { Link, useLocation } from 'react-router-dom';
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { MENU } from '../lib/menu';
 import type { Ton } from '../lib/format';
 
 const TONS: Record<Ton, string> = {
@@ -68,12 +70,27 @@ export function Etat({ enCours, erreur, donnees, recharger, children }: { enCour
   return <>{children}</>;
 }
 
-export const Titre = ({ titre, sous, droite }: { titre: string; sous?: ReactNode; droite?: ReactNode }) => (
-  <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-    <div><h1 className="text-2xl font-extrabold text-navy">{titre}</h1>{sous ? <p className="mt-1 text-sm text-slate-500">{sous}</p> : null}</div>
-    {droite}
-  </div>
-);
+/** Ban de titre de page : fil d'Ariane, titre, sous-titre et actions, sur fond navy avec le liseré aux couleurs d'Haïti. */
+export function Titre({ titre, sous, droite }: { titre: string; sous?: ReactNode; droite?: ReactNode }) {
+  const { pathname } = useLocation();
+  const entree = [...MENU].sort((x, y) => y.chemin.length - x.chemin.length).find((e) => pathname === e.chemin || pathname.startsWith(e.chemin + '/'));
+  return (
+    <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-navy to-navy-600 text-white shadow-lg">
+      <div className="flex flex-wrap items-end justify-between gap-4 px-6 pb-7 pt-5 md:px-8">
+        <div className="min-w-0">
+          <nav aria-label="Fil d'Ariane" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-white/60">
+            <Link to="/app" className="hover:text-white">Accueil</Link>
+            {entree && entree.chemin !== '/app' ? <><span aria-hidden="true">›</span><Link to={entree.chemin} className="hover:text-white">{entree.libelle}</Link></> : null}
+          </nav>
+          <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{titre}</h1>
+          {sous ? <p className="mt-1.5 max-w-3xl text-sm text-white/70 [&_a]:text-blue-200 [&_a:hover]:underline">{sous}</p> : null}
+        </div>
+        {droite ? <div className="flex flex-wrap items-center gap-2">{droite}</div> : null}
+      </div>
+      <div className="h-1 bg-gradient-to-r from-[#00209F] via-[#00209F] to-[#D21034]" aria-hidden="true" />
+    </div>
+  );
+}
 
 export const Pagination = ({ page, total, taille, onChange }: { page: number; total: number; taille: number; onChange: (p: number) => void }) => {
   const pages = Math.max(1, Math.ceil(total / taille));

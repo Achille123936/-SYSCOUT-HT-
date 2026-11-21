@@ -1,13 +1,21 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import PanneauAuth from '../components/PanneauAuth';
 import { Alerte, Bouton, Champ } from '../components/ui';
+
+const AVANTAGES: [string, string][] = [
+  ['Vos matchs et vos joueurs', 'Statistiques, direct, codage vidéo et rapports selon votre rôle.'],
+  ['Données vérifiées', "L'IA propose, l'analyste décide : rien de non vérifié n'est présenté comme officiel."],
+  ['Sécurisé', 'Session fermée après 20 minutes d’inactivité, compte protégé après 5 essais échoués.'],
+];
 
 // CU01 : connexion (blocage du compte après 5 essais échoués, géré par le serveur)
 export default function Connexion() {
   const { utilisateur, message, connexion } = useAuth();
   const [nom, setNom] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
+  const [voir, setVoir] = useState(false);
   const [souvenir, setSouvenir] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
@@ -25,21 +33,27 @@ export default function Connexion() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-navy px-4">
-      <form onSubmit={soumettre} className="w-full max-w-sm space-y-4 rounded-2xl bg-white p-7 shadow-xl">
-        <div><Link to="/" className="text-xs text-slate-500 hover:underline">‹ Accueil</Link>
-          <h1 className="mt-2 text-2xl font-extrabold text-navy">Connexion</h1>
-          <p className="text-sm text-slate-500">SYSCOUT-HT · espace des clubs et des analystes</p></div>
-        <Alerte ton="orange">{message}</Alerte>
-        <Alerte ton="rouge">{erreur}</Alerte>
-        <Champ libelle="Nom d'utilisateur" value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="username" autoFocus required />
-        <Champ libelle="Mot de passe" type="password" value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoComplete="current-password" required />
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" checked={souvenir} onChange={(e) => setSouvenir(e.target.checked)} /> Rester connecté sur cet appareil
-        </label>
-        <Bouton type="submit" className="w-full" disabled={enCours}>{enCours ? 'Connexion…' : 'Se connecter'}</Bouton>
-        <p className="text-center text-sm text-slate-500">Pas encore de compte ? <Link className="font-semibold text-brand-blue hover:underline" to="/inscription">Demander un compte</Link></p>
-      </form>
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <PanneauAuth titre="Content de vous revoir." avantages={AVANTAGES} />
+      <main className="flex items-center justify-center bg-white px-5 py-10 sm:px-10">
+        <div className="w-full max-w-md">
+          <Link to="/" className="mb-6 block text-lg font-extrabold text-navy lg:hidden">SYSCOUT<span className="text-brand-green">-HT</span></Link>
+          <h1 className="text-3xl font-extrabold text-navy">Connexion</h1>
+          <p className="mt-1 text-sm text-slate-500">Pas encore de compte ? <Link className="font-semibold text-brand-blue hover:underline" to="/inscription">Demander un compte</Link></p>
+          <form onSubmit={soumettre} className="mt-8 space-y-4">
+            <Alerte ton="orange">{message}</Alerte>
+            <Alerte ton="rouge">{erreur}</Alerte>
+            <Champ libelle="Nom d'utilisateur" value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="username" autoFocus required />
+            <Champ libelle="Mot de passe" type={voir ? 'text' : 'password'} value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} autoComplete="current-password" required />
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
+              <label className="flex items-center gap-2"><input type="checkbox" checked={souvenir} onChange={(e) => setSouvenir(e.target.checked)} /> Rester connecté</label>
+              <label className="flex items-center gap-2"><input type="checkbox" checked={voir} onChange={(e) => setVoir(e.target.checked)} /> Afficher le mot de passe</label>
+            </div>
+            <Bouton type="submit" className="w-full py-3" disabled={enCours}>{enCours ? 'Connexion…' : 'Se connecter'}</Bouton>
+          </form>
+          <p className="mt-6 text-xs text-slate-400">Mot de passe oublié ? Contactez l'administrateur : il peut le réinitialiser.</p>
+        </div>
+      </main>
     </div>
   );
 }
