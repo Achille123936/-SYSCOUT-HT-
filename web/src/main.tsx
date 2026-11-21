@@ -31,7 +31,8 @@ import { Utilisateurs, Audit } from './pages/Admin';
 import { Equipe, Assistant } from './pages/Equipe';
 import Apprentissage from './pages/Apprentissage';
 import Indicateurs from './pages/Indicateurs';
-import { Inscription, MonCompte } from './pages/Compte';
+import { MonCompte } from './pages/Compte';
+import Inscription from './pages/Inscription';
 import { JoueurForm, MatchForm } from './pages/Formulaires';
 
 createRoot(document.getElementById('root')!).render(

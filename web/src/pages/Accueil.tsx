@@ -1,4 +1,6 @@
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import Pied from '../components/Pied';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useChargement } from '../lib/hooks';
@@ -17,6 +19,8 @@ const FONCTIONS: [string, string][] = [
 // Page d'accueil publique : ce qu'est SYSCOUT-HT, les matchs en direct et les offres (RG11).
 export default function Accueil() {
   const { utilisateur } = useAuth();
+  const { hash } = useLocation();
+  useEffect(() => { if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }); }, [hash]);
   const chiffres = useChargement<any>(() => api.get('/chiffres-publics/'));
   const formules = useChargement<any[]>(() => api.get('/formules-publiques/'));
   const c = chiffres.donnees;
@@ -53,7 +57,7 @@ export default function Accueil() {
       </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/[0.03] py-10">
+      <section id="direct" className="scroll-mt-4 border-y border-white/10 bg-white/[0.03] py-10">
         <div className="mx-auto max-w-6xl px-5">
           <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-white/50">Matchs en direct</h2>
           <MatchsEnDirect sombre />
@@ -82,7 +86,7 @@ export default function Accueil() {
       ) : null}
 
       {formules.donnees?.length ? (
-        <section className="mx-auto max-w-6xl px-5 pb-16">
+        <section id="formules" className="mx-auto max-w-6xl scroll-mt-4 px-5 pb-16">
           <h2 className="mb-6 text-2xl font-extrabold">Formules d'abonnement</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {formules.donnees.map((f) => (
@@ -96,7 +100,7 @@ export default function Accueil() {
         </section>
       ) : null}
 
-      <footer className="border-t border-white/10 py-6 text-center text-xs text-white/40">SYSCOUT-HT · Observe. Analyse. Découvre. Perform.</footer>
+      <Pied />
     </div>
   );
 }

@@ -38,6 +38,7 @@ export default function Connexion() {
           <input type="checkbox" checked={souvenir} onChange={(e) => setSouvenir(e.target.checked)} /> Rester connecté sur cet appareil
         </label>
         <Bouton type="submit" className="w-full" disabled={enCours}>{enCours ? 'Connexion…' : 'Se connecter'}</Bouton>
+        <p className="text-center text-sm text-slate-500">Pas encore de compte ? <Link className="font-semibold text-brand-blue hover:underline" to="/inscription">Demander un compte</Link></p>
       </form>
     </div>
   );

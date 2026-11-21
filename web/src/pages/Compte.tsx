@@ -1,40 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Alerte, Bouton, Card, Champ, Titre } from '../components/ui';
-
-// Demande d'inscription : le compte est créé inactif, l'administrateur l'active et lui attribue son rôle.
-export function Inscription() {
-  const { utilisateur } = useAuth();
-  const [f, setF] = useState({ prenom: '', nom: '', courriel: '', telephone: '', nom_utilisateur: '', mot_de_passe: '' });
-  const [erreur, setErreur] = useState<string | null>(null);
-  const [fait, setFait] = useState(false);
-  if (utilisateur) return <Navigate to="/app" replace />;
-  const maj = (k: string, v: string) => setF({ ...f, [k]: v });
-  const envoyer = async (e: FormEvent) => {
-    e.preventDefault(); setErreur(null);
-    try { await api.post('/auth/inscription/', f); setFait(true); } catch (x) { setErreur((x as Error).message); }
-  };
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-navy px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl bg-white p-7 shadow-xl">
-        <Link to="/connexion" className="text-xs text-slate-500 hover:underline">‹ Connexion</Link>
-        <h1 className="mt-2 text-2xl font-extrabold text-navy">Demande d'inscription</h1>
-        {fait ? <div className="mt-4"><Alerte ton="vert">Demande envoyée. L'administrateur doit l'activer avant que vous puissiez vous connecter.</Alerte></div> : (
-          <form onSubmit={envoyer} className="mt-4 space-y-3">
-            <Alerte ton="rouge">{erreur}</Alerte>
-            <div className="grid grid-cols-2 gap-3"><Champ libelle="Prénom" value={f.prenom} onChange={(e) => maj('prenom', e.target.value)} required /><Champ libelle="Nom" value={f.nom} onChange={(e) => maj('nom', e.target.value)} required /></div>
-            <Champ libelle="Courriel" type="email" value={f.courriel} onChange={(e) => maj('courriel', e.target.value)} required />
-            <Champ libelle="Téléphone" value={f.telephone} onChange={(e) => maj('telephone', e.target.value)} />
-            <Champ libelle="Nom d'utilisateur" value={f.nom_utilisateur} onChange={(e) => maj('nom_utilisateur', e.target.value)} required />
-            <Champ libelle="Mot de passe" type="password" value={f.mot_de_passe} onChange={(e) => maj('mot_de_passe', e.target.value)} required autoComplete="new-password" />
-            <Bouton type="submit" className="w-full">Envoyer la demande</Bouton>
-          </form>)}
-      </div>
-    </div>
-  );
-}
 
 // Changement de mot de passe de l'utilisateur connecté, et fiche personnelle
 export function MonCompte() {
