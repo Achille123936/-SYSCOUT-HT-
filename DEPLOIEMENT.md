@@ -1,6 +1,6 @@
 # Mettre SYSCOUT-HT en ligne (Render, sans Docker)
 
-`render.yaml` décrit deux services : `syscout-api` (Django + WebSocket, Daphne) et `syscout-web` (application web Expo).
+`render.yaml` décrit deux services : `syscout-api` (Django + WebSocket, Daphne) et `syscout-web` (site web React (`web/`)).
 La base reste sur **Neon** (déjà migrée).
 
 ## Étapes
@@ -9,7 +9,7 @@ La base reste sur **Neon** (déjà migrée).
 2. Render demande les valeurs `sync: false` de `syscout-api`. Reprendre celles de `backend/.env` : `PGHOST`,
    `PGDATABASE`, `PGUSER`, `PGPASSWORD`. Laisser `SYSCOUT_HOSTS` et `SYSCOUT_CORS` vides pour l'instant.
 3. Lancer le déploiement. Quand `syscout-api` est « Live », noter son adresse (ex. `https://syscout-api.onrender.com`).
-4. Dans `syscout-web › Environment`, mettre `EXPO_PUBLIC_API_URL` = l'adresse de l'API, puis redéployer le site
+4. Dans `syscout-web › Environment`, mettre `VITE_API_URL` = l'adresse de l'API, puis redéployer le site
    (cette valeur est inscrite dans le code au moment de la construction).
 5. Dans `syscout-api › Environment` :
    - `SYSCOUT_HOSTS` = le nom de l'API sans `https://` (ex. `syscout-api.onrender.com`) ;

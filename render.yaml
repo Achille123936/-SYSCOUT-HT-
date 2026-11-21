@@ -36,15 +36,15 @@ services:
       - key: SYSCOUT_CORS    # adresse du site web, ex. https://syscout-web.onrender.com
         sync: false
 
-  # --- Application web (Expo, export statique) ---
+  # --- Site web React (Vite, export statique) ---
   - type: web
     name: syscout-web
     runtime: static
-    rootDir: syscout-ht
-    buildCommand: npm ci && npx expo export --platform web
+    rootDir: web
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     envVars:
-      - key: EXPO_PUBLIC_API_URL   # adresse de l'API, ex. https://syscout-api.onrender.com
+      - key: VITE_API_URL          # adresse de l'API, ex. https://syscout-api.onrender.com
         sync: false
     routes:
       - type: rewrite              # une adresse d'écran directe retombe sur l'application
