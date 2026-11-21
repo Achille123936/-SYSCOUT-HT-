@@ -13,3 +13,4 @@ backend/sauvegardes/
 # builds et caches Expo
 syscout-ht/dist/
 syscout-ht/.expo/
+backend/staticfiles/

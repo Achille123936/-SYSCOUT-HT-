@@ -2113,3 +2113,9 @@ class Test_FR052_Pistes_IA(Base):
         self.assertTrue(any('Peu de points' in a for a in d['avertissements']))
         vide = self.client.get(f'/api/pistes-ia/heatmap/?match={self.match.id}&confiance_min=0.99').data
         self.assertEqual((vide['points'], vide['confiance_moyenne']), (0, None))
+
+
+class Test_Sante(APITestCase):
+    def test_sante_sans_connexion(self):
+        r = self.client.get('/sante/')
+        self.assertEqual((r.status_code, r.json()), (200, {'etat': 'ok'}))

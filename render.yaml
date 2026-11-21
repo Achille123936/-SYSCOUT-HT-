@@ -1,0 +1,52 @@
+# Blueprint Render : Dashboard › New › Blueprint › choisir ce dépôt. Pas de Docker.
+# Les valeurs marquées `sync: false` (mots de passe, adresses) se saisissent dans le tableau de bord Render, jamais ici.
+services:
+  # --- Serveur Django : API HTTP et WebSocket du direct (Daphne, ASGI) ---
+  - type: web
+    name: syscout-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: python manage.py migrate --noinput && daphne -b 0.0.0.0 -p $PORT config.asgi:application
+    healthCheckPath: /sante/
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
+      - key: SYSCOUT_DEBUG
+        value: "0"
+      - key: SYSCOUT_SECRET_KEY
+        generateValue: true
+      - key: SYSCOUT_DB
+        value: postgres
+      - key: PGHOST          # base Neon : mêmes valeurs que backend/.env
+        sync: false
+      - key: PGDATABASE
+        sync: false
+      - key: PGUSER
+        sync: false
+      - key: PGPASSWORD
+        sync: false
+      - key: PGPORT
+        value: "5432"
+      - key: PGSSLMODE
+        value: require
+      - key: SYSCOUT_HOSTS   # ex. syscout-api.onrender.com
+        sync: false
+      - key: SYSCOUT_CORS    # adresse du site web, ex. https://syscout-web.onrender.com
+        sync: false
+
+  # --- Application web (Expo, export statique) ---
+  - type: web
+    name: syscout-web
+    runtime: static
+    rootDir: syscout-ht
+    buildCommand: npm ci && npx expo export --platform web
+    staticPublishPath: dist
+    envVars:
+      - key: EXPO_PUBLIC_API_URL   # adresse de l'API, ex. https://syscout-api.onrender.com
+        sync: false
+    routes:
+      - type: rewrite              # une adresse d'écran directe retombe sur l'application
+        source: /*
+        destination: /index.html

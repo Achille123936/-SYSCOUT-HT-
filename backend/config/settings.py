@@ -15,6 +15,8 @@ if (BASE_DIR / '.env').exists():
 SECRET_KEY = os.environ.get('SYSCOUT_SECRET_KEY', 'dev-seulement-changer-en-production')
 DEBUG = os.environ.get('SYSCOUT_DEBUG', '1') == '1'
 ALLOWED_HOSTS = os.environ.get('SYSCOUT_HOSTS', '*').split(',')
+if not DEBUG and SECRET_KEY.startswith('dev-seulement'):
+    raise RuntimeError('SYSCOUT_SECRET_KEY doit être défini quand SYSCOUT_DEBUG=0.')
 
 INSTALLED_APPS = [
     'daphne',        # en premier : `runserver` sert alors l'API et les WebSocket (ASGI)
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # fichiers statiques (administration) sans serveur web à part
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -113,6 +116,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # en production : montage du NAS de vidéos
 
@@ -122,6 +126,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.Pagination',
     'EXCEPTION_HANDLER': 'core.api.gestion_erreurs',
 }
+
+if not DEBUG:  # derrière le proxy HTTPS de l'hébergeur
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [o for o in os.environ.get('SYSCOUT_CORS', '').split(',') if o]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [o for o in os.environ.get('SYSCOUT_CORS', '').split(',') if o]
