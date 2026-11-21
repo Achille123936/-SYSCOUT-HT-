@@ -36,12 +36,22 @@ Autre serveur : `VITE_API_URL=https://syscout-api.onrender.com npm run build` (v
 | `/app/clubs`, `/competitions`, `/cameras`, `/abonnements` | référentiel, caméras, abonnements, factures et paiements |
 | `/app/utilisateurs`, `/audit`, `/compte` | comptes et droits, journal et sauvegardes, mot de passe |
 
-## Pas encore repris de l'application mobile
+## Fonctions ajoutées depuis l'application mobile
 
-La **télestration** (dessins et mesures posés sur la vidéo), le **capteur GPS** du téléphone (`CapteurScreen`, propre à
-l'appareil porté par le joueur), le **suivi vidéo d'un joueur** (trajet converti en mètres) et la **calibration d'une
-caméra** (formulaire des 4 coins) ; la création et la modification d'une caméra. Les vidéos en flux HLS exigent un
-navigateur qui les lit (Safari) : un flux RTSP doit d'abord être converti en HLS (voir `../vision/README.md`).
+- **Caméras** (`/app/cameras`) : création et modification (l'adresse du flux ne se relit pas : vide = inchangée), vérification,
+  **calibrage des 4 coins** cliqués sur l'image de la caméra (ou saisis à la main si elle n'a pas d'adresse de lecture).
+- **Télestration** (`/app/matchs/:id/relecture`, mode « Dessiner ») : 13 formes (flèche, ligne, courbe, cercle, ovale, zone,
+  projecteur, distance, liaisons, polygone, trait libre, texte, étiquette joueur avec vitesse), couleur et durée ; les dessins
+  réapparaissent à leur instant ; distances **en mètres** une fois le terrain calibré (mode « Calibrer le terrain »).
+- **Suivi vidéo d'un joueur** (mode « Suivre un joueur ») : on clique sur le joueur image après image ; le trajet est converti
+  en mètres (distance, sprints, vitesse maximale) et cumulé dans ses données physiques.
+- **Capteur GPS** (`/app/matchs/:id/capteur`) : enregistrement avec la géolocalisation du navigateur (HTTPS ou localhost
+  exigé) ou import d'un fichier GPX / CSV.
+
+## Limites
+
+Les vidéos en flux HLS exigent un navigateur qui les lit (Safari) ; un flux RTSP doit d'abord être converti en HLS (voir
+`../vision/README.md`). Un navigateur sur ordinateur n'est pas un capteur porté : le GPS est surtout utile avec un téléphone.
 
 Ces pages ont été vérifiées par le compilateur TypeScript, la construction Vite et des appels réels à l'API avec leurs
 vraies charges utiles ; elles n'ont pas été parcourues à la main dans un navigateur.

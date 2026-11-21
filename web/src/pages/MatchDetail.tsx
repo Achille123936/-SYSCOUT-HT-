@@ -31,6 +31,7 @@ export default function MatchDetail() {
             {m.nb_evenements ? <Link to={`/app/matchs/${m.id}/tactique`}><Bouton genre="secondaire">Analyse tactique</Bouton></Link> : null}
             {m.video_lecture ? <Link to={`/app/matchs/${m.id}/relecture`}><Bouton genre="secondaire">Relecture</Bouton></Link> : null}
             {m.etat !== 'PLANIFIE' && m.etat !== 'ANNULE' ? <Link to={`/app/matchs/${m.id}/physique`}><Bouton genre="secondaire">Données physiques</Bouton></Link> : null}
+            {analyste && m.etat !== 'PLANIFIE' && m.etat !== 'ANNULE' ? <Link to={`/app/matchs/${m.id}/capteur`}><Bouton genre="secondaire">Capteur GPS</Bouton></Link> : null}
             {analyste && m.etat !== 'PLANIFIE' && m.etat !== 'ANNULE' ? <Link to={`/app/matchs/${m.id}/verification-ia`}><Bouton genre="secondaire">Propositions de l'IA</Bouton></Link> : null}
             {analyste && m.etat !== 'PLANIFIE' && m.etat !== 'ANNULE' ? <Link to={`/app/matchs/${m.id}/pistes-ia`}><Bouton genre="secondaire">Pistes de l'IA</Bouton></Link> : null}
             {analyste && !['CODE', 'STATS_PUBLIEES', 'ANNULE'].includes(m.etat) ? <Link to={`/app/matchs/${m.id}/modifier`}><Bouton genre="secondaire">Modifier</Bouton></Link> : null}

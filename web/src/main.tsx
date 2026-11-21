@@ -20,6 +20,7 @@ import VerificationIA from './pages/VerificationIA';
 import Codage from './pages/Codage';
 import Relecture from './pages/Relecture';
 import Physique from './pages/Physique';
+import Capteur from './pages/Capteur';
 import Classements from './pages/Classements';
 import Championnat from './pages/Championnat';
 import Rapports from './pages/Rapports';
@@ -59,6 +60,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="matchs/:id/tactique" element={<Tactique />} />
             <Route path="matchs/:id/verification-ia" element={<VerificationIA />} />
             <Route path="matchs/:id/physique" element={<Physique />} />
+            <Route path="matchs/:id/capteur" element={<Capteur />} />
             <Route path="classements" element={<Classements />} />
             <Route path="championnat" element={<Championnat />} />
             <Route path="rapports" element={<Rapports />} />
