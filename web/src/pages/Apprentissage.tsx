@@ -4,6 +4,23 @@ import { api } from '../lib/api';
 import { GROUPES } from '../lib/format';
 import { useChargement } from '../lib/hooks';
 import { Alerte, Badge, Card, Champ, Choix, Etat, Titre, Vide } from '../components/ui';
+import { H, L, Terrain } from '../components/Terrain';
+
+/** Calibration du modèle xG : un modèle bien calibré suit la diagonale (xG prédit = fréquence observée de buts). */
+function CourbeCalibration({ tranches }: { tranches: { xg_moyen: number; frequence: number; tirs: number }[] }) {
+  const max = Math.max(0.1, ...tranches.flatMap((t) => [t.xg_moyen, t.frequence]));
+  const X = (v: number) => 10 + (v / max) * 80, Y = (v: number) => 90 - (v / max) * 80;
+  return (
+    <svg viewBox="0 0 100 100" className="w-full max-w-xs" role="img" aria-label="Courbe de calibration du modèle xG">
+      <rect x={10} y={10} width={80} height={80} fill="none" stroke="#cbd5e1" strokeWidth={0.5} />
+      <line x1={X(0)} y1={Y(0)} x2={X(max)} y2={Y(max)} stroke="#94a3b8" strokeDasharray="2 2" strokeWidth={0.5} />
+      <polyline fill="none" stroke="#0f2a4a" strokeWidth={1} points={tranches.map((t) => `${X(t.xg_moyen)},${Y(t.frequence)}`).join(' ')} />
+      {tranches.map((t) => <circle key={t.xg_moyen} cx={X(t.xg_moyen)} cy={Y(t.frequence)} r={1.6} fill="#0f2a4a"><title>{`xG ${t.xg_moyen} · observé ${t.frequence} · ${t.tirs} tirs`}</title></circle>)}
+      <text x={50} y={98} fontSize="4" textAnchor="middle" fill="#64748b">xG prédit</text>
+      <text x={3} y={50} fontSize="4" textAnchor="middle" fill="#64748b" transform="rotate(-90 3 50)">Fréquence observée</text>
+    </svg>
+  );
+}
 
 // Apprentissage automatique : profils de jeu (k-moyennes), modèle xG (régression logistique), joueurs similaires.
 export default function Apprentissage() {
@@ -64,6 +81,25 @@ export default function Apprentissage() {
                 <ul className="divide-y divide-slate-100 text-sm">{xg.donnees.exemples.map((e: any) => <li key={e.tir} className="flex justify-between py-2"><span>{e.tir}</span><span className="font-bold text-navy">{e.xg}</span></li>)}</ul>
               </div>
             ) : <Vide>Le modèle n'est pas encore entraîné : il faut des tirs codés.</Vide>}
+            {xg.donnees?.entraine && xg.donnees.calibration?.tranches?.length ? (
+              <div className="mt-6 grid gap-6 border-t border-slate-100 pt-6 lg:grid-cols-2">
+                <div>
+                  <h3 className="mb-2 text-sm font-bold text-navy">Carte des tirs (taille = xG, or = but)</h3>
+                  <Terrain>
+                    {xg.donnees.carte_tirs.map((t: any, i: number) => (
+                      <circle key={i} cx={(t.x / 100) * L} cy={(t.y / 100) * H} r={0.8 + 3 * t.xg}
+                        fill={t.but ? '#E0A526' : 'none'} fillOpacity={0.85} stroke={t.but ? '#fff' : '#2475D2'} strokeWidth={0.4} />
+                    ))}
+                  </Terrain>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-sm font-bold text-navy">Calibration du modèle</h3>
+                  <CourbeCalibration tranches={xg.donnees.calibration.tranches} />
+                  <p className="mt-2 text-sm text-slate-600">Score de Brier : <b>{xg.donnees.calibration.brier}</b> (référence : {xg.donnees.calibration.brier_reference}, plus bas = meilleur).</p>
+                  <p className="mt-1 text-xs text-slate-500">Mesuré sur les tirs d'entraînement, donc optimiste. La calibration compte plus que l'exactitude brute quand les probabilités servent à évaluer des joueurs.</p>
+                </div>
+              </div>
+            ) : null}
           </Etat>
         </Card>
       </div>

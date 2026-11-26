@@ -560,6 +560,16 @@ class Test_EF8_Statistiques(Base):
         self.assertGreater(calculer_xg(95, 50), calculer_xg(80, 50))
         self.assertGreater(calculer_xg(90, 50), calculer_xg(90, 10))  # angle fermé
 
+    def test_calibration_xg(self):
+        from apprentissage.ml import calibration_xg
+        # modèle parfaitement calibré : la fréquence observée de chaque tranche égale son xG moyen
+        predictions = [0.1] * 10 + [0.5] * 10
+        cibles = [1.0] + [0.0] * 9 + [1.0] * 5 + [0.0] * 5
+        r = calibration_xg(predictions, cibles, classes=2)
+        self.assertEqual([(t['xg_moyen'], t['frequence'], t['tirs']) for t in r['tranches']], [(0.1, 0.1, 10), (0.5, 0.5, 10)])
+        self.assertLess(r['brier'], r['brier_reference'])
+        self.assertEqual(calibration_xg([], [])['tranches'], [])
+
 
 class AvecStatistiques(Base):
     """Cinq matchs publiés, créés directement en base, pour les tests de consultation."""

@@ -132,6 +132,29 @@ def predire_xg(coefficients, zone_x, zone_y):
     return round(min(0.95, max(0.01, sigmoide(z))), 3)
 
 
+def calibration_xg(predictions, cibles, classes=5):
+    """Calibration d'un modèle xG : pour chaque tranche de probabilité prédite, xG moyen et fréquence observée de buts.
+
+    Renvoie aussi le score de Brier du modèle et celui d'une référence qui prédit toujours le taux de but moyen
+    (plus bas = meilleur). Un modèle bien calibré suit la diagonale (xG moyen ≈ fréquence observée)."""
+    n = len(predictions)
+    if n == 0:
+        return {'tranches': [], 'brier': None, 'brier_reference': None}
+    ordre = sorted(range(n), key=lambda i: predictions[i])
+    tranches = []
+    for k in range(classes):
+        indices = ordre[k * n // classes:(k + 1) * n // classes]
+        if not indices:
+            continue
+        tranches.append({'xg_moyen': round(sum(predictions[i] for i in indices) / len(indices), 3),
+                         'frequence': round(sum(cibles[i] for i in indices) / len(indices), 3),
+                         'tirs': len(indices)})
+    taux = sum(cibles) / n
+    return {'tranches': tranches,
+            'brier': round(sum((p - c) ** 2 for p, c in zip(predictions, cibles)) / n, 4),
+            'brier_reference': round(sum((taux - c) ** 2 for c in cibles) / n, 4)}
+
+
 # ---------------------------------------------------------------- Capteur GPS : de la trace aux données physiques
 RAYON_TERRE = 6371000.0
 VITESSE_IMPOSSIBLE = 12.5   # m/s (45 km/h) : au-delà, c'est une erreur du GPS

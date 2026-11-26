@@ -66,6 +66,26 @@ def profils(request):
     return Response({'groupe': groupe, 'profils': [resultat[numero] for numero in sorted(resultat)]})
 
 
+TIRS_AFFICHES = 400
+
+
+def _tirs_valides():
+    return list(Evenement.objects.filter(
+        match__etat=EtatMatch.STATS_PUBLIEES, type_action__in=[TypeAction.TIR, TypeAction.BUT],
+    ).values_list('zone_x', 'zone_y', 'type_action'))
+
+
+def _qualite(modele):
+    """Carte des tirs et calibration, mesurées sur les tirs des matchs validés (ceux de l'entraînement : la mesure
+    est donc optimiste et ne remplace pas une évaluation sur de nouveaux matchs)."""
+    tirs = _tirs_valides()
+    predictions = [ml.predire_xg(modele.coefficients, x, y) for x, y, _ in tirs]
+    cibles = [1.0 if t == TypeAction.BUT else 0.0 for _, _, t in tirs]
+    return {'calibration': ml.calibration_xg(predictions, cibles),
+            'carte_tirs': [{'x': x, 'y': y, 'xg': p, 'but': bool(c)}
+                           for (x, y, _), p, c in list(zip(tirs, predictions, cibles))[-TIRS_AFFICHES:]]}
+
+
 def _etat_modele(modele):
     if modele is None:
         return {'entraine': False, 'detail': 'Aucun modèle entraîné : la formule géométrique par défaut est utilisée.'}
@@ -75,7 +95,8 @@ def _etat_modele(modele):
             'gain_pct': round(gain, 1),
             # ce que le modèle a appris, sur trois tirs de référence dans l'axe du but
             'exemples': [{'tir': nom, 'xg': ml.predire_xg(modele.coefficients, x, 50)}
-                         for nom, x in (('6 mètres', 94.3), ('Point de penalty (11 m)', 89.5), ('25 mètres', 76.2))]}
+                         for nom, x in (('6 mètres', 94.3), ('Point de penalty (11 m)', 89.5), ('25 mètres', 76.2))],
+            **_qualite(modele)}
 
 
 @api_view(['GET', 'POST'])
@@ -84,9 +105,7 @@ def modele_xg(request):
     """GET : état du modèle xG actif. POST : entraînement sur les tirs des matchs validés."""
     if request.method == 'GET':
         return Response(_etat_modele(ModeleXG.objects.filter(actif=True).first()))
-    tirs = list(Evenement.objects.filter(
-        match__etat=EtatMatch.STATS_PUBLIEES, type_action__in=[TypeAction.TIR, TypeAction.BUT],
-    ).values_list('zone_x', 'zone_y', 'type_action'))
+    tirs = _tirs_valides()
     buts = sum(1 for _, _, type_action in tirs if type_action == TypeAction.BUT)
     if len(tirs) < TIRS_MINIMUM or buts == 0 or buts == len(tirs):
         raise ValidationError(f"Il faut au moins {TIRS_MINIMUM} tirs codés dans des matchs validés, dont des buts "
