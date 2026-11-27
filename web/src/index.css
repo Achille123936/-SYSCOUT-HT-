@@ -4,3 +4,13 @@
 
 html, body, #root { min-height: 100%; }
 body { @apply bg-slate-50 font-sans text-slate-800 antialiased; }
+
+/* Espace connecté : densité et couleurs de l'interface « Scout », appliquées aux classes déjà utilisées par les pages */
+.dense :is(.rounded-2xl, .rounded-xl, .rounded-lg) { border-radius: 3px; }
+.dense :is(.shadow-sm, .shadow-lg) { box-shadow: none; }
+.dense table :is(th, td) { padding-top: 0.3rem; padding-bottom: 0.3rem; font-size: 13px; }
+.dense table th { font-size: 11px; }
+.dense .text-navy { color: theme('colors.wy.texte'); }
+.dense .text-brand-blue { color: theme('colors.wy.bleu'); }
+.dense .bg-brand-blue { background-color: theme('colors.wy.azur'); }
+.dense .border-brand-blue { border-color: theme('colors.wy.azur'); }

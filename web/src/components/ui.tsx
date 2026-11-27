@@ -9,14 +9,14 @@ const TONS: Record<Ton, string> = {
 };
 
 export const Badge = ({ children, ton = 'gris' }: { children: ReactNode; ton?: Ton }) => (
-  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONS[ton]}`}>{children}</span>
+  <span className={`inline-flex items-center rounded-[3px] px-2 py-0.5 text-[11px] font-bold ${TONS[ton]}`}>{children}</span>
 );
 
 export const Card = ({ titre, droite, children, className = '' }: { titre?: ReactNode; droite?: ReactNode; children: ReactNode; className?: string }) => (
-  <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+  <section className={`border border-wy-bord bg-white p-4 ${className}`}>
     {titre || droite ? (
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-navy">{titre}</h2>{droite}
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-[13px] font-bold uppercase tracking-wide text-wy-texte">{titre}</h2>{droite}
       </div>
     ) : null}
     {children}
@@ -25,13 +25,13 @@ export const Card = ({ titre, droite, children, className = '' }: { titre?: Reac
 
 type Genre = 'primaire' | 'secondaire' | 'succes' | 'danger';
 const GENRES: Record<Genre, string> = {
-  primaire: 'bg-brand-blue text-white hover:bg-blue-700',
+  primaire: 'bg-wy-azur text-white hover:bg-wy-bleu',
   secondaire: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50',
   succes: 'bg-brand-green text-white hover:bg-emerald-600',
   danger: 'bg-brand-red text-white hover:bg-red-600',
 };
 export const Bouton = ({ genre = 'primaire', className = '', ...p }: ButtonHTMLAttributes<HTMLButtonElement> & { genre?: Genre }) => (
-  <button {...p} className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${GENRES[genre]} ${className}`} />
+  <button {...p} className={`inline-flex items-center justify-center gap-2 rounded-[3px] px-3 py-1.5 text-[13px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${GENRES[genre]} ${className}`} />
 );
 
 export const Alerte = ({ ton = 'orange', children }: { ton?: 'orange' | 'rouge' | 'bleu' | 'vert'; children: ReactNode }) => {
@@ -40,7 +40,7 @@ export const Alerte = ({ ton = 'orange', children }: { ton?: 'orange' | 'rouge' 
   return <div role="alert" className={`whitespace-pre-line rounded-lg border px-4 py-3 text-sm ${c}`}>{children}</div>;
 };
 
-const champ = 'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-blue-100';
+const champ = 'w-full rounded-[3px] border border-wy-bord bg-white px-3 py-1.5 text-[13px] outline-none focus:border-wy-azur focus:ring-1 focus:ring-wy-azur';
 export const Champ = ({ libelle, erreur, ...p }: InputHTMLAttributes<HTMLInputElement> & { libelle?: string; erreur?: string }) => (
   <label className="block text-sm">
     {libelle ? <span className="mb-1 block font-medium text-slate-700">{libelle}</span> : null}
@@ -70,24 +70,23 @@ export function Etat({ enCours, erreur, donnees, recharger, children }: { enCour
   return <>{children}</>;
 }
 
-/** Ban de titre de page : fil d'Ariane, titre, sous-titre et actions, sur fond navy avec le liseré aux couleurs d'Haïti. */
+/** Barre de titre de page (style « Scout ») : fil d'Ariane, titre en majuscules, sous-titre et actions, filet azur. */
 export function Titre({ titre, sous, droite }: { titre: string; sous?: ReactNode; droite?: ReactNode }) {
   const { pathname } = useLocation();
   const entree = [...MENU].sort((x, y) => y.chemin.length - x.chemin.length).find((e) => pathname === e.chemin || pathname.startsWith(e.chemin + '/'));
   return (
-    <div className="relative mb-8 overflow-hidden rounded-2xl bg-gradient-to-r from-navy to-navy-600 text-white shadow-lg">
-      <div className="flex flex-wrap items-end justify-between gap-4 px-6 pb-7 pt-5 md:px-8">
+    <div className="mb-4 border border-b-2 border-wy-bord border-b-wy-azur bg-white">
+      <div className="flex flex-wrap items-end justify-between gap-3 px-4 py-3">
         <div className="min-w-0">
-          <nav aria-label="Fil d'Ariane" className="mb-3 flex flex-wrap items-center gap-1.5 text-xs text-white/60">
-            <Link to="/app" className="hover:text-white">Accueil</Link>
-            {entree && entree.chemin !== '/app' ? <><span aria-hidden="true">›</span><Link to={entree.chemin} className="hover:text-white">{entree.libelle}</Link></> : null}
+          <nav aria-label="Fil d'Ariane" className="mb-1 flex flex-wrap items-center gap-1.5 text-[11px] text-wy-doux">
+            <Link to="/app" className="hover:text-wy-bleu">Accueil</Link>
+            {entree && entree.chemin !== '/app' ? <><span aria-hidden="true">›</span><Link to={entree.chemin} className="hover:text-wy-bleu">{entree.libelle}</Link></> : null}
           </nav>
-          <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">{titre}</h1>
-          {sous ? <p className="mt-1.5 max-w-3xl text-sm text-white/70 [&_a]:text-blue-200 [&_a:hover]:underline">{sous}</p> : null}
+          <h1 className="text-[16px] font-bold uppercase text-wy-texte">{titre}</h1>
+          {sous ? <p className="mt-0.5 max-w-3xl text-[12px] text-wy-doux [&_a]:text-wy-bleu [&_a:hover]:underline">{sous}</p> : null}
         </div>
         {droite ? <div className="flex flex-wrap items-center gap-2">{droite}</div> : null}
       </div>
-      <div className="h-1 bg-gradient-to-r from-[#00209F] via-[#00209F] to-[#D21034]" aria-hidden="true" />
     </div>
   );
 }
