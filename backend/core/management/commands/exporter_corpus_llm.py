@@ -9,6 +9,8 @@ import random
 from django.core.management.base import BaseCommand
 
 from joueurs.models import GROUPE_POSTE
+from matchs.models import EtatMatch, Evenement, Match, TypeAction
+from matchs.tactique import DEFINITIONS
 from statistiques.models import StatistiqueJoueur
 
 LIBELLES = {'buts_p90': 'buts', 'xg_p90': 'buts attendus (xG)', 'tirs_p90': 'tirs', 'passes_p90': 'passes',
@@ -59,9 +61,38 @@ class Command(BaseCommand):
                              'entree': contexte, 'sortie': reponse})
             exemples.append({'instruction': f'Quels sont les points forts de {nom} ?',
                              'entree': contexte, 'sortie': points_forts})
+        exemples += self.exemples_matchs() + self.exemples_definitions()
         random.shuffle(exemples)
         with open(options['sortie'], 'w', encoding='utf-8') as f:
             for e in exemples:
                 f.write(json.dumps(e, ensure_ascii=False) + '\n')
         self.stdout.write(self.style.SUCCESS(
             f"{len(exemples)} exemples ({len(eligibles)} joueurs majeurs éligibles) écrits dans {options['sortie']}."))
+
+    @staticmethod
+    def exemples_definitions():
+        """Définitions des indicateurs tactiques, telles que SYSCOUT-HT les calcule."""
+        return [{'instruction': f"Comment SYSCOUT-HT définit-il l'indicateur « {cle.replace('_', ' ')} » ?",
+                 'entree': '', 'sortie': texte} for cle, texte in DEFINITIONS.items()]
+
+    @staticmethod
+    def exemples_matchs():
+        """Résumés de matchs publiés (clubs, score, tirs, buts codés) : le chiffre vient de la base, jamais du modèle."""
+        exemples = []
+        for m in Match.objects.filter(etat=EtatMatch.STATS_PUBLIEES).select_related('club_domicile', 'club_exterieur'):
+            tirs = {m.club_domicile_id: 0, m.club_exterieur_id: 0}
+            clubs = dict(m.compositions.values_list('joueur_id', 'club_id'))
+            for joueur_id in m.evenements.filter(type_action__in=[TypeAction.TIR, TypeAction.BUT]).values_list(
+                    'joueur_id', flat=True):
+                if clubs.get(joueur_id) in tirs:
+                    tirs[clubs[joueur_id]] += 1
+            d, e = m.club_domicile, m.club_exterieur
+            contexte = (f'{d.nom} {m.score_domicile} - {m.score_exterieur} {e.nom} (journée {m.journee}). '
+                        f'Tirs codés : {d.nom} {tirs[d.id]}, {e.nom} {tirs[e.id]}.')
+            vainqueur = (d.nom if m.score_domicile > m.score_exterieur else e.nom if m.score_exterieur > m.score_domicile
+                         else None)
+            exemples.append({'instruction': 'Résume ce match en une phrase.', 'entree': contexte,
+                             'sortie': (f'{vainqueur} gagne {max(m.score_domicile, m.score_exterieur)} à '
+                                        f'{min(m.score_domicile, m.score_exterieur)}.' if vainqueur else
+                                        f'{d.nom} et {e.nom} font match nul {m.score_domicile} à {m.score_exterieur}.')})
+        return exemples

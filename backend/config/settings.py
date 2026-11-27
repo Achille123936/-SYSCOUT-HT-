@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'commercial',
     'audit',
     'apprentissage',
+    'assistant',
     'equipe',
 ]
 

@@ -47,7 +47,7 @@ export function Equipe() {
   );
 }
 
-interface Echange { question: string; reponse: string; liens?: { ecran: string; params: { id: number }; titre: string }[] }
+interface Echange { question: string; reponse: string; sources?: { id: string; titre: string }[]; liens?: { ecran: string; params: { id: number }; titre: string }[] }
 const LIENS: Record<string, (id: number) => string> = { JoueurDetail: (id) => `/app/joueurs/${id}`, MatchDetail: (id) => `/app/matchs/${id}` };
 
 // Assistant : répond à une question sur un joueur, une équipe, un match, à partir des données validées
@@ -56,11 +56,17 @@ export function Assistant() {
   const [fil, setFil] = useState<Echange[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [ia, setIa] = useState(false);
   const poser = async (e: FormEvent) => {
     e.preventDefault();
     const q = question.trim(); if (!q) return;
     setErreur(null); setEnCours(true);
-    try { const r = await api.post('/assistant/', { question: q }); setFil((f) => [...f, { question: q, reponse: r.reponse, liens: r.liens }]); setQuestion(''); }
+    try {
+      // IA : modèle de langage (Claude) qui répond à partir des données autorisées ; sinon assistant à règles
+      const historique = fil.flatMap((x) => [{ role: 'user', content: x.question }, { role: 'assistant', content: x.reponse }]);
+      const r = ia ? await api.post('/assistant/ia/', { question: q, historique }) : await api.post('/assistant/', { question: q });
+      setFil((f) => [...f, { question: q, reponse: r.reponse, liens: r.liens, sources: r.sources }]); setQuestion('');
+    }
     catch (x) { setErreur((x as Error).message); } finally { setEnCours(false); }
   };
   return (
@@ -71,10 +77,13 @@ export function Assistant() {
           <div key={i} className="space-y-2">
             <p className="ml-auto max-w-lg rounded-2xl bg-brand-blue px-4 py-2 text-sm text-white">{x.question}</p>
             <div className="max-w-2xl rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><p className="whitespace-pre-line">{x.reponse}</p>
+              {x.sources?.length ? <p className="mt-2 flex flex-wrap gap-2">{x.sources.map((src) => <span key={src.id} className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600" title={src.titre}>[{src.id}] {src.titre}</span>)}</p> : null}
               {x.liens?.length ? <p className="mt-2 flex flex-wrap gap-2">{x.liens.map((l) => LIENS[l.ecran] ? <Link key={`${l.ecran}${l.params.id}`} to={LIENS[l.ecran](l.params.id)} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-brand-blue hover:bg-blue-50">{l.titre}</Link> : null)}</p> : null}</div>
           </div>
         ))}
         <Alerte ton="rouge">{erreur}</Alerte>
+        <label className="flex max-w-2xl items-start gap-2 text-sm text-slate-600"><input type="checkbox" className="mt-1" checked={ia} onChange={(e) => setIa(e.target.checked)} />
+          <span>Réponse par intelligence artificielle (Claude). La question et des passages de données autorisées (sans mineurs) sont envoyés à un service externe. Vérifiez les chiffres cités.</span></label>
         <form onSubmit={poser} className="flex max-w-2xl items-end gap-3"><div className="flex-1"><Champ libelle="Votre question" value={question} onChange={(e) => setQuestion(e.target.value)} /></div><Bouton type="submit" disabled={enCours}>{enCours ? '…' : 'Demander'}</Bouton></form>
       </div>
     </>

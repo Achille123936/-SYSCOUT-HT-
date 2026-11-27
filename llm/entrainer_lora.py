@@ -20,7 +20,7 @@ def gabarit(e):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--modele', default='Qwen/Qwen2.5-0.5B-Instruct')
-    p.add_argument('--corpus', default='corpus.jsonl')
+    p.add_argument('--corpus', nargs='+', default=['corpus.jsonl'], help='un ou plusieurs fichiers JSONL')
     p.add_argument('--sortie', default='adaptateur')
     p.add_argument('--epoques', type=int, default=2)
     p.add_argument('--lot', type=int, default=4)
@@ -30,7 +30,8 @@ def main():
     random.seed(42)
     torch.manual_seed(42)
 
-    exemples = [json.loads(ligne) for ligne in open(a.corpus, encoding='utf-8') if ligne.strip()]
+    exemples = [json.loads(ligne) for chemin in a.corpus for ligne in open(chemin, encoding='utf-8') if ligne.strip()]
+    random.shuffle(exemples)
     coupure = max(1, int(len(exemples) * 0.9))
     train, val = exemples[:coupure], exemples[coupure:]
     appareil = 'cuda' if torch.cuda.is_available() else 'cpu'

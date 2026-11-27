@@ -62,3 +62,14 @@ Les flux HLS (`.m3u8`) se lisent dans tous les navigateurs (hls.js) ; un flux RT
 3. **Settings › Networking › Generate Domain** : noter l'adresse (ex. `syscout-api.up.railway.app`).
 4. Ajouter `SYSCOUT_HOSTS` = cette adresse sans `https://`, et `SYSCOUT_CORS` = l'adresse du site web (ex. `https://syscout-ht.netlify.app`).
 5. Sur le site web, `VITE_API_URL` = `https://<adresse Railway>`, puis reconstruire et redéployer le site.
+
+## Assistant IA (Claude)
+
+L'écran **Assistant** propose une case « Réponse par intelligence artificielle ». Elle appelle `POST /api/assistant/ia/` : le serveur
+retrouve des passages de données autorisées pour l'utilisateur (connaissances de base, définitions, statistiques des joueurs
+visibles, résultats), puis demande à l'API Claude d'y répondre en citant ses sources `[J12]`, `[K3]`…
+
+- Variable `ANTHROPIC_API_KEY` (Render › Environment), jamais dans le dépôt. `SYSCOUT_LLM_MODELE` change le modèle (`claude-opus-5-5` par défaut).
+- **Confidentialité** : la question et les passages sont envoyés à Anthropic. Aucune donnée de joueur mineur n'est jamais incluse (RG12).
+- **Coût** : chaque question est facturée par jeton ; limite de 30 questions par heure et par utilisateur.
+- Sans clé, l'assistant à règles (case décochée) continue de fonctionner.

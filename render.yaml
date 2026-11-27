@@ -42,6 +42,8 @@ services:
         sync: false
       - key: SYSCOUT_S3_SECRET_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY   # assistant IA (Claude) ; sans elle, la case « Réponse par intelligence artificielle » répond 503
+        sync: false
       - key: SYSCOUT_HOSTS   # ex. syscout-api.onrender.com
         sync: false
       - key: SYSCOUT_CORS    # adresse du site web, ex. https://syscout-web.onrender.com

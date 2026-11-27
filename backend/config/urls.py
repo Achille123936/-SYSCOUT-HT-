@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.urls import include, path
 
 # chaque module du SEL apporte ses propres routes
-MODULES = ['core', 'comptes', 'referentiel', 'joueurs', 'matchs', 'cameras', 'statistiques', 'scouting', 'commercial', 'audit', 'apprentissage', 'equipe']
+MODULES = ['core', 'comptes', 'referentiel', 'joueurs', 'matchs', 'cameras', 'statistiques', 'scouting', 'commercial', 'audit', 'apprentissage', 'assistant', 'equipe']
 
 
 
