@@ -16,6 +16,7 @@ from matchs.tactique import DEFINITIONS
 from referentiel.models import Saison
 from statistiques.models import StatistiqueJoueur
 
+from . import donnees_externes
 from .connaissances import QR
 
 MOTS_VIDES = set('le la les un une des du de d l et ou a au aux en est sont que qui quoi quel quelle quels quelles '
@@ -42,7 +43,8 @@ def mots(texte):
 def passages_connaissances():
     return ([Passage(f'K{i}', q, r) for i, (q, r) in enumerate(QR, 1)]
             + [Passage(f'D{i}', f"Définition SYSCOUT-HT : {cle.replace('_', ' ')}", texte)
-               for i, (cle, texte) in enumerate(DEFINITIONS.items(), 1)])
+               for i, (cle, texte) in enumerate(DEFINITIONS.items(), 1)]
+            + [Passage(*p) for p in donnees_externes.passages()])
 
 
 def passages_joueurs(utilisateur):

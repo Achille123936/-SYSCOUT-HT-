@@ -43,6 +43,25 @@ class RechercheTests(Base):
         self.assertEqual(ids, {f'J{adulte.id}'})
 
 
+class DonneesExternesTests(Base):
+    def test_valeurs_transcrites(self):
+        from . import donnees_externes as d
+        self.assertEqual(d.MATCHS['France']['xg'], (0.22, 1.66))
+        self.assertEqual(d.MATCHS['Arabie saoudite']['receptions_dernier_tiers'], (167, 50))
+        self.assertTrue(all(len(v) == 2 for m in d.MATCHS.values() for v in m.values()))
+        self.assertEqual(set(d.INDICATEURS), set(d.MATCHS['Uruguay']))
+
+    def test_la_recherche_retrouve_le_match(self):
+        trouves = classer("statistiques Haïti U-17 contre l'Uruguay", rag.passages_connaissances())
+        self.assertTrue(any('Uruguay' in p.titre for p in trouves))
+
+    def test_aucun_score_invente(self):
+        from . import donnees_externes as d
+        texte = ' '.join(p[2] for p in d.passages())
+        self.assertNotIn('gagne', texte)
+        self.assertNotIn('victoire', texte.lower())
+
+
 class VueAssistantTests(Base):
     def poser(self, question='Que mesure le PPDA ?', **extra):
         return self.client.post('/api/assistant/ia/', {'question': question, **extra}, format='json')

@@ -8,6 +8,7 @@ import random
 
 from django.core.management.base import BaseCommand
 
+from assistant import donnees_externes
 from joueurs.models import GROUPE_POSTE
 from matchs.models import EtatMatch, Evenement, Match, TypeAction
 from matchs.tactique import DEFINITIONS
@@ -61,7 +62,7 @@ class Command(BaseCommand):
                              'entree': contexte, 'sortie': reponse})
             exemples.append({'instruction': f'Quels sont les points forts de {nom} ?',
                              'entree': contexte, 'sortie': points_forts})
-        exemples += self.exemples_matchs() + self.exemples_definitions()
+        exemples += self.exemples_matchs() + self.exemples_definitions() + donnees_externes.exemples()
         random.shuffle(exemples)
         with open(options['sortie'], 'w', encoding='utf-8') as f:
             for e in exemples:
