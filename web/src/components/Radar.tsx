@@ -19,14 +19,14 @@ export default function Radar({ series }: { series: Serie[] }) {
     <div>
       <svg viewBox={`0 0 ${T * 2} ${T * 2}`} className="mx-auto w-full max-w-sm" role="img" aria-label="Radar des centiles">
         {[25, 50, 75, 100].map((g) => (
-          <polygon key={g} points={AXES.map((_, i) => point(i, g).join(',')).join(' ')} fill="none" stroke="#e2e8f0" />
+          <polygon key={g} points={AXES.map((_, i) => point(i, g).join(',')).join(' ')} fill="none" style={{ stroke: 'var(--wy-bord)' }} />
         ))}
         {AXES.map(([, nom], i) => {
           const [x, y] = point(i, 100); const [lx, ly] = point(i, 118);
           return (
             <g key={nom}>
-              <line x1={T} y1={T} x2={x} y2={y} stroke="#e2e8f0" />
-              <text x={lx} y={ly} fontSize="9.5" textAnchor="middle" dominantBaseline="middle" fill="#64748b">{nom}</text>
+              <line x1={T} y1={T} x2={x} y2={y} style={{ stroke: 'var(--wy-bord)' }} />
+              <text x={lx} y={ly} fontSize="10" textAnchor="middle" dominantBaseline="middle" style={{ fill: 'var(--wy-texte)' }}>{nom}</text>
             </g>
           );
         })}

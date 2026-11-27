@@ -1,6 +1,6 @@
 import type { Taille } from './VideoAnnotable';
 
-export type Forme = 'FLECHE' | 'LIGNE' | 'CERCLE' | 'OVALE' | 'ZONE' | 'SPOT' | 'MESURE' | 'COURBE' | 'TEXTE' | 'JOUEUR' | 'TRAIT' | 'CHAINE' | 'POLY';
+export type Forme = 'FLECHE' | 'LIGNE' | 'CERCLE' | 'OVALE' | 'ZONE' | 'SPOT' | 'MESURE' | 'COURBE' | 'TEXTE' | 'JOUEUR' | 'TRAIT' | 'CHAINE' | 'POLY' | 'BANDE';
 export type Point = [number, number];
 export interface Dessin { id?: number; forme: Forme; couleur: string; points: Point[]; texte?: string; mesures?: number[]; temps_video?: number; duree?: number; auteur_nom?: string }
 
@@ -9,7 +9,7 @@ export const FORMES: Record<Forme, [string, [number, number], boolean]> = {
   FLECHE: ['Flèche', [2, 2], false], LIGNE: ['Ligne', [2, 2], false], COURBE: ['Courbe', [3, 3], false], CERCLE: ['Cercle', [2, 2], false],
   OVALE: ['Ovale', [2, 2], false], ZONE: ['Zone', [2, 2], false], SPOT: ['Projecteur', [2, 2], false], MESURE: ['Distance', [2, 2], true],
   CHAINE: ['Liaisons', [2, 12], true], POLY: ['Triangle / polygone', [3, 12], true], TRAIT: ['Trait libre', [2, 400], false],
-  TEXTE: ['Texte', [1, 1], false], JOUEUR: ['Étiquette joueur', [1, 1], false],
+  TEXTE: ['Texte', [1, 1], false], JOUEUR: ['Étiquette joueur', [1, 1], false], BANDE: ['Flèche à chevrons', [2, 2], false],
 };
 
 const milieu = (a: Point, b: Point): Point => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
@@ -27,6 +27,22 @@ export default function DessinSvg({ d, taille, provisoire = false }: { d: Dessin
   const base = { stroke: c, strokeWidth: 0.6, fill: 'none', vectorEffect: 'non-scaling-stroke' as const, opacity: provisoire ? 0.7 : 1 };
   const trait = { ...base, strokeWidth: 3 };
   if (!p.length) return null;
+  if (d.forme === 'BANDE') {
+    if (p.length < 2) return <circle cx={p[0][0]} cy={p[0][1]} r={0.8} fill={c} />;
+    // chevrons réguliers entre les deux points, calculés en pixels pour ne pas être déformés
+    const [ax, ay, bx, by] = [(p[0][0] / 100) * taille.l, (p[0][1] / 100) * taille.h, (p[1][0] / 100) * taille.l, (p[1][1] / 100) * taille.h];
+    const long = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / long, uy = (by - ay) / long, t = 11;
+    const pc = (x: number, y: number) => `${(x / taille.l) * 100},${(y / taille.h) * 100}`;
+    return (
+      <g opacity={provisoire ? 0.7 : 1}>
+        {Array.from({ length: Math.max(1, Math.floor(long / (t * 1.6))) }, (_, i) => {
+          const x = ax + ux * (i * t * 1.6 + t), y = ay + uy * (i * t * 1.6 + t);
+          return <polyline key={i} points={`${pc(x - ux * t - uy * t, y - uy * t + ux * t)} ${pc(x, y)} ${pc(x - ux * t + uy * t, y - uy * t - ux * t)}`}
+            fill="none" stroke={c} strokeWidth={5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />;
+        })}
+      </g>
+    );
+  }
   const rayon = (a: Point, b: Point): [number, number] => {
     const r = Math.hypot(((b[0] - a[0]) * taille.l) / 100, ((b[1] - a[1]) * taille.h) / 100);
     return [(r * 100) / taille.l, (r * 100) / taille.h];

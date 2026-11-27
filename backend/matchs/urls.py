@@ -10,6 +10,7 @@ router.register('evenements', views.EvenementViewSet, basename='evenement')
 router.register('propositions-ia', views.PropositionIAViewSet, basename='proposition-ia')
 router.register('pistes-ia', views.PisteJoueurViewSet, basename='piste-ia')
 router.register('annotations', views.AnnotationViewSet, basename='annotation')
+router.register('marques', views.MarqueVideoViewSet, basename='marque')
 router.register('playlists', views.PlaylistViewSet, basename='playlist')
 
 urlpatterns = [

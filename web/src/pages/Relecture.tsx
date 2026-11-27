@@ -7,6 +7,12 @@ import { useChargement } from '../lib/hooks';
 import DessinSvg, { FORMES, type Dessin, type Forme, type Point } from '../components/Dessins';
 import VideoAnnotable from '../components/VideoAnnotable';
 import ImporterVideo from '../components/ImporterVideo';
+import Chronologie from '../components/Chronologie';
+import CalqueSuivi, { CalqueControle, grouperParPiste, pistesALInstant, type PointPiste, type Suivi } from '../components/SuiviVideo';
+import TableauCodage from '../components/TableauCodage';
+import { COLONNES, COULEUR_DOMICILE, COULEUR_EXTERIEUR, LIGNES, controle, teinte } from '../lib/controle';
+import { REFERENCES_M } from '../lib/homographie';
+import { H, L, Terrain } from '../components/Terrain';
 import { Alerte, Badge, Bouton, Card, Champ, Choix, Chargement, Titre, Vide } from '../components/ui';
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -39,6 +45,10 @@ export default function Relecture() {
   const [trace, setTrace] = useState<{ t: number; x: number; y: number }[]>([]);
   const [temps, setTemps] = useState(0);
   const [importer, setImporter] = useState(false);
+  const [superposer, setSuperposer] = useState(false);
+  const [liees, setLiees] = useState<string[]>([]);
+  const [zones, setZones] = useState(false);
+  const marques = useChargement<any[]>(() => api.get('/marques/', { match: id }).then((r: any) => (Array.isArray(r) ? r : r.results)), [id]);
   const match = useChargement<any>(() => api.get(`/matchs/${id}/`), [id]);
   const evts = useChargement<any>(() => api.get('/evenements/', { match: id, page_size: 1000 }), [id]);
   const lists = useChargement<any[]>(() => api.get('/playlists/', { match: id }).then((r: any) => (Array.isArray(r) ? r : r.results)), [id]);
@@ -46,6 +56,23 @@ export default function Relecture() {
   const m = match.donnees;
   const analyste = a('ADMIN', 'ANALYSTE');
   const calibre = coins.length === 4;
+  const pistes = useChargement<PointPiste[]>(() => (superposer ? api.get('/pistes-ia/', { match: id }).then((r: any) => (Array.isArray(r) ? r : r.results)) : null), [id, superposer]);
+  const parPiste = useMemo(() => grouperParPiste(pistes.donnees || []), [pistes.donnees]);
+  const nomsPistes = useMemo(() => [...parPiste.keys()], [parPiste]);
+  const libellePiste = (piste: string, j: number | null) => {
+    const c = m?.compositions.find((x: any) => x.joueur === j);
+    return c ? `${c.numero_maillot ?? ''} ${c.joueur_nom.split(' ').pop()}`.trim() : `PISTE ${nomsPistes.indexOf(piste) + 1}`;
+  };
+  const couleurPiste = (s: Suivi) => (s.club === m?.club_domicile ? '#ff4d4f' : s.club === m?.club_exterieur ? '#ffffff' : '#00AAFF');
+  const lier = (piste: string) => setLiees((l) => (l.includes(piste) ? l.filter((x) => x !== piste) : [...l, piste]));
+  const suivis = superposer ? pistesALInstant(parPiste, temps) : [];
+  // équipe d'une piste : celle proposée par le moteur, sinon celle du joueur identifié dans la composition
+  const equipe = (s: Suivi) => s.club ?? m?.compositions.find((c: any) => c.joueur === s.joueur)?.club ?? null;
+  // les positions des pistes sont en % du rectangle de référence : on les ramène au terrain entier
+  const [refL, refH] = REFERENCES_M[reference];
+  const presents = suivis.filter((s) => equipe(s) != null).map((s) => ({ x: (s.x * refL) / 105, y: (s.y * refH) / 68, domicile: equipe(s) === m?.club_domicile }));
+  const cases = zones ? controle(presents) : [];
+  const partDomicile = cases.length ? Math.round((100 * cases.filter((c) => c.part >= 0.5).length) / cases.length) : null;
 
   const filtres = useMemo(() => {
     const t = ((Array.isArray(evts.donnees) ? evts.donnees : evts.donnees?.results || []) as any[]).filter((e) => (!type || e.type_action === type) && (!joueur || String(e.joueur) === joueur));
@@ -98,6 +125,9 @@ export default function Relecture() {
   const visibles: Dessin[] = (dessins.donnees || []).filter((d) => temps >= d.temps_video && temps < d.temps_video + d.duree);
   const rendu = (taille: { l: number; h: number }) => (
     <>
+      {superposer && calibre && mode === 'lecture' && zones && reference === 'TERRAIN' ? <CalqueControle cases={cases} coins={coins} reference={reference} /> : null}
+      {superposer && calibre && mode === 'lecture' ? <CalqueSuivi suivis={suivis} coins={coins} reference={reference} taille={taille} liees={liees}
+        etiquette={(s) => libellePiste(s.piste, s.joueur)} couleur={couleurPiste} /> : null}
       {visibles.map((d) => <DessinSvg key={d.id} d={d} taille={taille} />)}
       {mode === 'dessin' && points.length ? <DessinSvg d={{ forme, couleur, points, texte, mesures: [] }} taille={taille} provisoire /> : null}
       {(mode === 'calibrage' || mode === 'suivi') && coins.length ? <g>{coins.length >= 2 ? <polyline points={[...coins, ...(calibre ? [coins[0]] : [])].map((p) => p.join(',')).join(' ')} fill="none" stroke="#20B56B" strokeWidth={2} vectorEffect="non-scaling-stroke" /> : null}{coins.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r={0.9} fill="#20B56B" />)}</g> : null}
@@ -120,6 +150,20 @@ export default function Relecture() {
             <div className="mb-3 space-y-2"><Alerte ton="rouge">{erreur}</Alerte><Alerte ton="vert">{info}</Alerte></div>
             {!m.video_lecture && analyste && ['PLANIFIE', 'VIDEO_IMPORTEE'].includes(m.etat) ? <div className="mb-3"><Bouton onClick={() => setImporter(true)}>Importer une vidéo</Bouton><ImporterVideo ouvert={importer} onFermer={() => setImporter(false)} matchId={m.id} onFait={() => match.recharger()} /></div> : null}
             <VideoAnnotable src={m.video_lecture || undefined} refVideo={video} onTemps={setTemps} capture={mode !== 'lecture'} onPoint={surPoint} onGlisser={surGlisser} onFin={surFin} rendu={rendu} aide={aide} />
+            {analyste && m.video_lecture ? (
+              <div className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
+                <label className="flex items-center gap-2 font-medium"><input type="checkbox" checked={superposer} onChange={(e) => setSuperposer(e.target.checked)} /> Superposer le suivi automatique des joueurs</label>
+                {superposer ? (<>
+                  <Alerte ton="orange">Données du moteur IA, non vérifiées. Le terrain doit être calibré sur cette vidéo, avec la même référence que la caméra.</Alerte>
+                  {!calibre ? <Alerte ton="bleu">Calibrez d'abord le terrain (bouton « Calibrer le terrain », 4 coins), puis revenez en « Lecture ».</Alerte> : null}
+                  {pistes.erreur ? <Alerte ton="rouge">{pistes.erreur}</Alerte> : null}
+                  {pistes.donnees && !pistes.donnees.length ? <p className="text-slate-500">Le moteur IA n'a envoyé aucune piste pour ce match.</p> : null}
+                  {nomsPistes.length ? <div className="flex flex-wrap items-center gap-2"><span className="text-slate-500">Relier (distances en mètres) :</span>
+                    {nomsPistes.map((p) => <button key={p} onClick={() => lier(p)} aria-pressed={liees.includes(p)} className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${liees.includes(p) ? 'border-brand-blue bg-brand-blue text-white' : 'border-slate-300'}`}>{libellePiste(p, parPiste.get(p)![0].joueur)}</button>)}
+                    {liees.length ? <button className="text-xs text-brand-blue hover:underline" onClick={() => setLiees([])}>Tout délier</button> : null}</div> : null}
+                  <label className="flex items-center gap-2"><input type="checkbox" checked={zones} onChange={(e) => setZones(e.target.checked)} /> Afficher le contrôle de l'espace (sur la vidéo avec la référence « Terrain entier », et sur la vue 2D)</label>
+                </>) : null}
+              </div>) : null}
             {analyste && m.video_lecture ? (
               <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
                 <div className="flex flex-wrap gap-2">
@@ -150,6 +194,36 @@ export default function Relecture() {
                     {trace.length ? <Bouton genre="secondaire" onClick={() => setTrace([])}>Effacer</Bouton> : null}
                   </div>) : null}
               </div>) : null}
+          </Card>
+          {superposer ? (
+            <Card titre="Vue tactique 2D" droite={partDomicile != null ? <span className="text-xs font-bold"><span style={{ color: COULEUR_DOMICILE }}>{m.domicile_nom} {partDomicile} %</span> · <span style={{ color: COULEUR_EXTERIEUR }}>{100 - partDomicile} % {m.exterieur_nom}</span></span> : undefined}>
+              <Terrain derriere={<>{cases.map((c) => <rect key={`${c.i}-${c.j}`} x={c.i * (L / COLONNES)} y={c.j * (H / LIGNES)} width={L / COLONNES} height={H / LIGNES} {...teinte(c.part)} />)}</>}>
+                {suivis.map((s) => { const x = ((s.x * refL) / 105 / 100) * L, y = ((s.y * refH) / 68 / 100) * H, e = equipe(s); return (
+                  <g key={s.piste} onClick={() => lier(s.piste)} style={{ cursor: 'pointer' }}><title>{libellePiste(s.piste, s.joueur)}</title>
+                    <circle cx={x} cy={y} r={2} fill={e == null ? '#00AAFF' : e === m.club_domicile ? COULEUR_DOMICILE : COULEUR_EXTERIEUR} stroke="#fff" strokeWidth={liees.includes(s.piste) ? 0.9 : 0.35} />
+                    <text x={x} y={y + 0.8} fontSize={2.2} fontWeight="bold" textAnchor="middle" fill="#fff">{m.compositions.find((c: any) => c.joueur === s.joueur)?.numero_maillot ?? nomsPistes.indexOf(s.piste) + 1}</text></g>); })}
+              </Terrain>
+              <p className="mt-2 text-xs text-slate-500">Positions du moteur IA à l'instant de la vidéo (non vérifiées).{zones ? (cases.length ? " Contrôle de l'espace : estimation par la seule distance des joueurs suivis, sans vitesse ni ballon." : " Contrôle de l'espace indisponible : il faut des joueurs des deux équipes, identifiés ou classés.") : ''}</p>
+            </Card>
+          ) : null}
+          <Card titre="Tableau de codage">
+            <TableauCodage matchId={Number(id)} video={video} marques={marques} peutCoder={analyste} />
+          </Card>
+          <Card titre="Chronologie">
+            <Chronologie actions={filtres} marques={marques.donnees || []} video={video} temps={temps} aller={aller} />
+          </Card>
+          <Card titre="Carte des actions">
+            <Terrain>
+              {filtres.slice(0, 600).map((e) => (
+                <g key={e.id} onClick={() => aller(e.temps_video)} style={{ cursor: 'pointer' }}>
+                  <title>{`${mmss(e.temps_video)} · ${e.type_libelle} · ${e.joueur_nom}`}</title>
+                  {e.fin_x != null ? <><line x1={(e.zone_x / 100) * L} y1={(e.zone_y / 100) * H} x2={(e.fin_x / 100) * L} y2={(e.fin_y / 100) * H} stroke={e.resultat ? '#F5D90A' : '#E5484D'} strokeWidth={0.35} strokeOpacity={0.8} />
+                    <circle cx={(e.fin_x / 100) * L} cy={(e.fin_y / 100) * H} r={0.7} fill={e.resultat ? '#F5D90A' : '#E5484D'} /></> : null}
+                  <circle cx={(e.zone_x / 100) * L} cy={(e.zone_y / 100) * H} r={0.9} fill="#00AAFF" fillOpacity={0.85} />
+                </g>
+              ))}
+            </Terrain>
+            <p className="mt-2 text-xs text-slate-500">Chaque équipe attaque vers la droite. Les passes et centres dont l'arrivée est codée sont tracés (jaune : réussis, rouge : ratés). Un clic lit l'action.{filtres.length > 600 ? ` Les 600 premières des ${filtres.length} actions sont affichées : filtrez par action ou par joueur.` : ''}</p>
           </Card>
           <Card titre={`Dessins (${(dessins.donnees || []).length})`}>
             {dessins.donnees?.length ? (

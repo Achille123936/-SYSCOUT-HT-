@@ -87,7 +87,7 @@ export function Disque({ parts }: { parts: Part[] }) {
     <svg viewBox="0 0 340 260" className="mx-auto w-full max-w-[360px]" role="img" aria-label="Répartition des actions">
       <circle cx={CX} cy={CY} r={R + 7} fill="none" stroke="#7EC4EE" strokeWidth={4} />
       {segments.map((s) => s.part === 1 ? <circle key={s.nom} cx={CX} cy={CY} r={R} fill={s.couleur} /> : <path key={s.nom} d={s.d} fill={s.couleur} stroke="#fff" strokeWidth={1} />)}
-      {segments.map((s) => <text key={s.nom} x={s.lx} y={s.ly} fontSize="9" textAnchor={s.ancre as 'start' | 'end'} fill="#555">{s.nom.toUpperCase()} {Math.round(s.part * 100)}%</text>)}
+      {segments.map((s) => <text key={s.nom} x={s.lx} y={s.ly} fontSize="10" fontWeight="bold" textAnchor={s.ancre as 'start' | 'end'} style={{ fill: 'var(--wy-texte)' }}>{s.nom.toUpperCase()} {Math.round(s.part * 100)}%</text>)}
     </svg>
   );
 }

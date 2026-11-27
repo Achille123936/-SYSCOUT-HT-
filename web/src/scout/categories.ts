@@ -1,6 +1,8 @@
 // Catégories de la liste des actions : toutes se calculent à partir des événements codés (aucune donnée inventée).
 // « Passes progressives » suit la définition de backend/matchs/tactique.py ; « avant un but » est déduite.
 
+import { QUALIFICATIFS } from '../lib/format';
+
 export interface Categorie { id: string; libelle: string; aide?: string; filtre: (e: any, tous: any[]) => boolean }
 
 const L = 105, H = 68, FENETRE_AVANT_BUT = 10; // secondes
@@ -27,12 +29,16 @@ function avantUnBut(e: any, tous: any[]) {
 }
 
 const type = (...t: string[]) => (e: any) => t.includes(e.type_action);
+const detail = (code: string) => (e: any) => !!e.qualificatifs?.includes(code);
+/** Catégories des détails cochés au codage : vides tant que l'analyste ne les a pas saisis. */
+const DETAILS: Categorie[] = Object.entries(QUALIFICATIFS).map(([code, q]) => ({
+  id: code.toLowerCase(), libelle: q.libelle, aide: 'Détail coché par l\'analyste au codage', filtre: detail(code) }));
 
 export const CATEGORIES: Categorie[] = [
   { id: 'rapport', libelle: 'Rapport vidéo automatique', aide: 'Buts, tirs, dribbles réussis et cartons', filtre: (e) => type('BUT', 'TIR', 'CARTON')(e) || (e.type_action === 'DRIBBLE' && e.resultat) },
   { id: 'meilleures', libelle: 'Meilleures actions', aide: 'Buts, tirs cadrés ou réussis, dribbles réussis', filtre: (e) => type('BUT', 'TIR', 'DRIBBLE')(e) && e.resultat },
   { id: 'buts', libelle: 'Buts', filtre: type('BUT') },
-  { id: 'avant-but', libelle: 'Passes avant un but', aide: 'Déduit : dernière passe réussie dans les 10 s avant le but', filtre: avantUnBut },
+  { id: 'avant-but', libelle: 'Passes avant un but', aide: 'Déduit comme les passes décisives : dernière passe réussie dans les 10 s avant le but', filtre: avantUnBut },
   { id: 'passes', libelle: 'Passes', filtre: type('PASSE') },
   { id: 'progressives', libelle: 'Passes progressives', filtre: progressive },
   { id: 'surface', libelle: 'Passes vers la surface', filtre: (e) => type('PASSE', 'CENTRE')(e) && e.fin_x != null && dansLaSurface(e.fin_x, e.fin_y) },
@@ -48,4 +54,5 @@ export const CATEGORIES: Categorie[] = [
   { id: 'corners', libelle: 'Corners', filtre: type('CORNER') },
   { id: 'arrets', libelle: 'Arrêts du gardien', filtre: type('ARRET') },
   { id: 'cartons', libelle: 'Cartons', filtre: type('CARTON') },
+  ...DETAILS,
 ];

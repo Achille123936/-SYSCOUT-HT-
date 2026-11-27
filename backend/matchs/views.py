@@ -17,9 +17,9 @@ from core.api import AuditMixin
 from core.auth import AbonnementActif, SPORTIFS, roles
 from core.services import controler_codage, journaliser, recalculer_saison
 from matchs import direct, live, stockage
-from matchs.models import (Annotation, DonneePhysique, EtatMatch, Evenement, Match, PisteJoueur, Playlist,
+from matchs.models import (MarqueVideo, Annotation, DonneePhysique, EtatMatch, Evenement, Match, PisteJoueur, Playlist,
                            PropositionIA, SourceDonnee, StatutValidation, SuiviJoueur, TypeAction, ValidationEvenement)
-from matchs.serializers import (AnnotationSerializer, DonneePhysiqueSerializer, EvenementSerializer,
+from matchs.serializers import (MarqueVideoSerializer, AnnotationSerializer, DonneePhysiqueSerializer, EvenementSerializer,
                                 MatchSerializer, PisteJoueurSerializer, PlaylistSerializer,
                                 PropositionIASerializer)
 
@@ -743,6 +743,20 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         self._exiger_auteur(instance)
         instance.delete()
+
+
+class MarqueVideoViewSet(AnnotationViewSet):
+    """Tableau de codage : mêmes droits que la télestration (les analystes marquent, les rôles sportifs consultent)."""
+    serializer_class = MarqueVideoSerializer
+
+    def get_queryset(self):
+        qs = MarqueVideo.objects.select_related('auteur', 'match')
+        if self.action == 'list':
+            match = self.request.query_params.get('match')
+            if not match or not match.isdigit():
+                raise ValidationError({'match': 'Indiquez le match.'})
+            qs = qs.filter(match_id=match)
+        return qs
 
 
 class PlaylistViewSet(viewsets.ModelViewSet):

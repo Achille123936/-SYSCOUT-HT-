@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { SERVEUR, api, jetonActuel } from '../lib/api';
 import { TYPES_ACTION } from '../lib/format';
 import { useIntervalle } from '../lib/hooks';
+import VideoDirect from '../components/VideoDirect';
 import { Alerte, Badge, Card, Chargement, Titre } from '../components/ui';
 
 const ADRESSE_WS = SERVEUR.replace(/^http/, 'ws'); // https devient wss
@@ -62,6 +63,7 @@ export default function Direct() {
           <Link to={`/app/matchs/${m.id}`} className="text-brand-blue hover:underline">Fiche du match</Link></span>} />
       <div className="space-y-6">
         <Alerte ton="rouge">{erreur}</Alerte>
+        <VideoDirect matchId={id!} />
         {tableau.propositions.en_attente ? <Alerte ton="bleu">{tableau.propositions.en_attente} proposition(s) de l'IA attendent la décision de l'analyste : elles ne comptent pas encore dans les chiffres.</Alerte> : null}
         <div className="grid gap-6 lg:grid-cols-2">
           <Card titre="Comparaison des équipes">

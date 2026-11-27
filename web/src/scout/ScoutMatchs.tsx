@@ -43,6 +43,7 @@ export default function ScoutMatchs() {
   const arrive = useRef(false);                   // la vidéo a atteint le passage demandé
   const [angle, setAngle] = useState(1);
   const reprise = useRef(0);
+  const [extraction, setExtraction] = useState(false);
 
   const competitions = useChargement<any[]>(() => api.tout('/competitions/'), []);
   const matchs = useChargement<Page<any>>(() => api.get('/matchs/', { joueur, club, competition, page, page_size: 50 }), [joueur, club, competition, page]);
@@ -118,6 +119,36 @@ export default function ScoutMatchs() {
     if (v.readyState >= 1) f(); else v.addEventListener('loadedmetadata', f, { once: true });
     return () => v.removeEventListener('loadedmetadata', f);
   }, [match.donnees?.id, instant]);
+  /** Enregistre l'action choisie (de 5 s avant à 4 s après) en fichier WebM ; l'enregistrement se fait en temps réel. */
+  const extraire = async () => {
+    const v = video.current as (HTMLVideoElement & { captureStream?: () => MediaStream }) | null;
+    const e = moments.find((x) => x.id === actif);
+    if (!v || !e) return setMessage("Choisissez d'abord une action dans la liste.");
+    if (!v.captureStream || typeof MediaRecorder === 'undefined') return setMessage("Ce navigateur ne sait pas enregistrer d'extrait (utilisez Chrome ou Edge).");
+    const vitesseAvant = v.playbackRate;
+    setFile([]); setExtraction(true); setMessage('Enregistrement de l\'extrait…');
+    try {
+      const attendre = (nom: string) => new Promise<void>((ok) => v.addEventListener(nom, () => ok(), { once: true }));
+      v.pause();
+      const positionne = attendre('seeked'); v.currentTime = Math.max(0, e.temps_video - AVANT); await positionne;
+      v.playbackRate = 1; await v.play();
+      const morceaux: Blob[] = [];
+      const enregistreur = new MediaRecorder(v.captureStream(), { mimeType: 'video/webm' });
+      enregistreur.ondataavailable = (x) => { if (x.data.size) morceaux.push(x.data); };
+      const arrete = new Promise<void>((ok) => { enregistreur.onstop = () => ok(); });
+      enregistreur.start(250);
+      await new Promise<void>((ok) => {
+        const fin = () => { if (v.currentTime >= e.temps_video + APRES || v.ended || v.paused) { v.removeEventListener('timeupdate', fin); v.removeEventListener('pause', fin); ok(); } };
+        v.addEventListener('timeupdate', fin); v.addEventListener('pause', fin);
+      });
+      enregistreur.stop(); await arrete; v.pause();
+      const lien = document.createElement('a'); lien.href = URL.createObjectURL(new Blob(morceaux, { type: 'video/webm' }));
+      lien.download = `match-${idCourant}-${mmss(e.temps_video).replace(':', 'm')}.webm`; lien.click();
+      setTimeout(() => URL.revokeObjectURL(lien.href), 10000);
+      setMessage('Extrait téléchargé.');
+    } catch { setMessage("Extrait impossible : la vidéo vient d'un autre site qui ne l'autorise pas, ou ne se lit pas."); }
+    finally { v.playbackRate = vitesseAvant; setExtraction(false); }
+  };
   const partager = async () => {
     const u = new URL(window.location.href); u.searchParams.set('match', idCourant); u.searchParams.set('t', String(Math.floor(temps)));
     try { await navigator.clipboard.writeText(u.toString()); setMessage('Lien copié (il demande une connexion).'); } catch { setMessage(u.toString()); }
@@ -219,6 +250,7 @@ export default function ScoutMatchs() {
                 {file.length ? <BoutonAzur onClick={() => { setFile([]); video.current?.pause(); }}>Arrêter ({rang + 1}/{file.length})</BoutonAzur>
                   : <BoutonAzur onClick={lireRapport} disabled={!choisies.length}>▶ Rapport vidéo ({choisies.length})</BoutonAzur>}
                 {m.video_url_2 ? <BoutonAzur onClick={() => changerAngle(angle === 1 ? 2 : 1)}>Angle {angle === 1 ? 2 : 1}</BoutonAzur> : null}
+                <BoutonAzur onClick={extraire} disabled={extraction || actif == null}>Télécharger l'extrait</BoutonAzur>
                 <BoutonAzur onClick={partager}>Partager</BoutonAzur>
               </div>
             ) : null}

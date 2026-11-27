@@ -54,7 +54,7 @@ export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin
         </svg>
         {habillage ? <div className="pointer-events-none absolute left-3 top-3">{habillage}</div> : null}
       </div>
-      <div className="mt-2 flex items-center gap-2 text-sm">
+      <div className="mt-2 flex flex-wrap items-center gap-2 whitespace-nowrap text-sm">
         <button className="rounded border border-slate-300 px-2 py-1" onClick={() => aller(temps - 5)} aria-label="Reculer de 5 secondes">−5 s</button>
         <button className="rounded border border-slate-300 px-2 py-1" onClick={() => aller(temps - 1)} aria-label="Reculer de 1 seconde">−1 s</button>
         <button className="w-20 rounded bg-navy px-3 py-1 font-semibold text-white" onClick={() => (lecture ? video.current?.pause() : video.current?.play())}>{lecture ? 'Pause' : 'Lecture'}</button>
@@ -65,7 +65,7 @@ export default function VideoAnnotable({ src, capture, onPoint, onGlisser, onFin
             className={`rounded border px-1.5 py-1 text-xs font-bold ${vitesse === v ? 'border-brand-blue bg-brand-blue text-white' : 'border-slate-300'}`}>{v}x</button>)}
         </span>
         <button className="rounded border border-slate-300 px-2 py-1" onClick={() => boite.current?.requestFullscreen?.()} aria-label="Plein écran">⛶</button>
-        <input type="range" min={0} max={duree || 0} step={0.1} value={temps} onChange={(e) => aller(Number(e.target.value))} className="flex-1" aria-label="Position dans la vidéo" />
+        <input type="range" min={0} max={duree || 0} step={0.1} value={temps} onChange={(e) => aller(Number(e.target.value))} className="min-w-[8rem] flex-1" aria-label="Position dans la vidéo" />
         <span className="w-24 text-right font-mono text-xs text-slate-500">{mmss(temps)} / {mmss(duree)}</span>
       </div>
       {aide ? <p className="mt-1 text-xs text-slate-500">{aide}</p> : null}

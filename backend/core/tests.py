@@ -5,6 +5,7 @@ import socket
 import tempfile
 import threading
 import uuid
+from types import SimpleNamespace
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
@@ -18,11 +19,13 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TransactionTestCase, override_settings
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIClient, APITestCase
 
 from .models import (Abonnement, Camera, Club, Competition, Composition, EtatAbonnement, EtatMatch, Evenement, Facture,
                      Formule, HistoriqueClub, Joueur, Match, OperationAudit, Paiement, PropositionIA, RapportScouting,
                      Role, Saison, StatistiqueJoueur, Utilisateur, ValidationEvenement)
+from statistiques.models import StatistiqueJoueur
 from .services import calculer_xg, mettre_a_jour_abonnements, recalculer_saison
 
 MDP = 'Syscout2026'
@@ -559,6 +562,22 @@ class Test_EF8_Statistiques(Base):
     def test_xg_plus_fort_pres_du_but(self):
         self.assertGreater(calculer_xg(95, 50), calculer_xg(80, 50))
         self.assertGreater(calculer_xg(90, 50), calculer_xg(90, 10))  # angle fermé
+
+    def test_qualificatifs_controles_selon_le_type(self):
+        from matchs.models import QUALIFICATIFS
+        from matchs.serializers import EvenementSerializer
+        s = EvenementSerializer()
+        donnees = {'qualificatifs': ['PASSE_CLE', 'PASSE_CLE', 'PASSE_PROFONDEUR']}
+        s._controler_qualificatifs(donnees, None, 'PASSE')
+        self.assertEqual(donnees['qualificatifs'], ['PASSE_CLE', 'PASSE_PROFONDEUR'])
+        for faux, type_action in ((['DUEL_AERIEN'], 'PASSE'), (['INCONNU'], 'PASSE'), ('PASSE_CLE', 'PASSE'), ([1], 'DUEL')):
+            with self.assertRaises(ValidationError):
+                s._controler_qualificatifs({'qualificatifs': faux}, None, type_action)
+        # un changement de type retire les détails qui ne conviennent plus
+        donnees = {}
+        s._controler_qualificatifs(donnees, SimpleNamespace(qualificatifs=['PASSE_CLE']), 'DUEL')
+        self.assertEqual(donnees['qualificatifs'], [])
+        self.assertTrue(all(types for _, types in QUALIFICATIFS.values()))
 
     def test_calibration_xg(self):
         from apprentissage.ml import calibration_xg
@@ -2350,3 +2369,54 @@ class Test_Stockage_S3(Base):
         with override_settings(SYSCOUT={**settings.SYSCOUT, 'S3': False}):
             self.assertEqual(self.demander().data, {'mode': 'local'})
             self.assertEqual(self.client.post(f'{self.base}/importer-video/', {'cle': 'videos/x.mp4'}, format='json').status_code, 400)
+
+
+class RechercheAvanceeTests(AvecStatistiques):
+    def test_filtres_par_centile_minutes_et_taille(self):
+        self.comme(self.analyste)
+        tous = self.client.get('/api/joueurs/', {'page_size': 100}).data['count']
+        forts = self.client.get('/api/joueurs/', {'criteres': 'buts_p90:90', 'page_size': 100})
+        self.assertEqual(forts.status_code, 200)
+        self.assertLess(forts.data['count'], tous)
+        attendus = set(StatistiqueJoueur.objects.filter(saison=self.saison, centiles__buts_p90__gte=90)
+                       .values_list('joueur_id', flat=True))
+        self.assertEqual({j['id'] for j in forts.data['results']}, attendus)
+        self.assertEqual(self.client.get('/api/joueurs/', {'minutes_min': 100000}).data['count'], 0)
+        self.assertEqual(self.client.get('/api/joueurs/', {'taille_min': 300}).data['count'], 0)
+
+    def test_critere_invalide_refuse(self):
+        self.comme(self.analyste)
+        for parametres in ({'criteres': 'salaire:10'}, {'criteres': 'buts_p90:beaucoup'}, {'taille_min': 'x'}):
+            self.assertEqual(self.client.get('/api/joueurs/', parametres).status_code, 400, parametres)
+
+
+class MarquesVideoTests(AvecStatistiques):
+    def creer(self, **extra):
+        from matchs.models import Match
+        donnees = {'match': Match.objects.first().id, 'categorie': 'ATTAQUE', 'temps_video': 30, **extra}
+        return self.client.post('/api/marques/', donnees, format='json')
+
+    def test_analyste_marque_et_les_roles_sportifs_consultent(self):
+        self.comme(self.analyste)
+        r = self.creer(etiquettes=['Occasion', 'Axe', 'Axe'])
+        self.assertEqual(r.status_code, 201, r.data)
+        self.assertEqual(r.data['etiquettes'], ['Axe', 'Occasion'])
+        self.comme(self.scout)
+        liste = self.client.get('/api/marques/', {'match': r.data['match']})
+        self.assertEqual([m['id'] for m in liste.data], [r.data['id']])
+        self.assertEqual(self.creer().status_code, 403)
+        self.assertEqual(self.client.delete(f"/api/marques/{r.data['id']}/").status_code, 403)
+
+    def test_donnees_invalides_refusees(self):
+        self.comme(self.analyste)
+        for extra in ({'etiquettes': ['Corner']}, {'etiquettes': 'Axe'}, {'categorie': 'AUTRE'}, {'temps_video': -1}):
+            self.assertEqual(self.creer(**extra).status_code, 400, extra)
+        self.assertEqual(self.client.get('/api/marques/').status_code, 400)
+
+    def test_seul_l_auteur_efface(self):
+        self.comme(self.analyste)
+        identifiant = self.creer().data['id']
+        self.comme(self.analyste2)
+        self.assertEqual(self.client.delete(f'/api/marques/{identifiant}/').status_code, 403)
+        self.comme(self.analyste)
+        self.assertEqual(self.client.delete(f'/api/marques/{identifiant}/').status_code, 204)

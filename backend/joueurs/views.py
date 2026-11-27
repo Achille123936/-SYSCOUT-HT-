@@ -10,14 +10,17 @@ from rest_framework.response import Response
 from comptes.models import Role
 from core.api import AuditMixin, exiger_role
 from core.auth import AbonnementActif, LECTEURS_JOUEURS, roles
+from core.services import STATS_CENTILES
 from core.visibilite import joueurs_visibles, rapports_visibles, saison_demandee, statistique_de
 from matchs.direct import physique_saison
 from matchs.models import EtatMatch, Evenement
 from joueurs.models import GROUPE_POSTE, Joueur
 from joueurs.serializers import HistoriqueClubSerializer, JoueurSerializer
+from referentiel.models import Saison
 from referentiel.serializers import SaisonSerializer
 from scouting.models import EtatRapport
 from scouting.serializers import RapportSerializer
+from statistiques.models import StatistiqueJoueur
 from statistiques.serializers import StatistiqueSerializer
 
 
@@ -61,10 +64,36 @@ class JoueurViewSet(AuditMixin, viewsets.ModelViewSet):
             qs = qs.filter(date_naissance__gt=aujourdhui.replace(year=aujourdhui.year - int(p['age_max']) - 1))
         if p.get('age_min'):
             qs = qs.filter(date_naissance__lte=aujourdhui.replace(year=aujourdhui.year - int(p['age_min'])))
+        qs = self._filtres_avances(qs, p)
         if p.get('tri') == 'nom':
             return qs.order_by('nom', 'prenom')
         # CU10 : liste triée par indice (les joueurs sans indice en dernier)
         return qs.order_by(F('indice_performance').desc(nulls_last=True), 'nom', 'prenom')
+
+    @staticmethod
+    def _filtres_avances(qs, p):
+        """Taille, minutes jouées et centiles minimaux de la saison courante (`criteres=xg_p90:70,passes_p90:50`)."""
+        def nombre(champ, texte):
+            try:
+                return float(texte)
+            except ValueError:
+                raise ValidationError({champ: 'Nombre attendu.'})
+
+        for champ, filtre in (('taille_min', 'taille__gte'), ('taille_max', 'taille__lte')):
+            if p.get(champ):
+                qs = qs.filter(**{filtre: nombre(champ, p[champ])})
+        criteres = {}
+        for morceau in filter(None, p.get('criteres', '').split(',')):
+            statistique, _, seuil = morceau.partition(':')
+            if statistique not in STATS_CENTILES:
+                raise ValidationError({'criteres': f'Statistique inconnue : {statistique}.'})
+            criteres[f'centiles__{statistique}__gte'] = nombre('criteres', seuil)
+        if p.get('minutes_min'):
+            criteres['minutes_jouees__gte'] = nombre('minutes_min', p['minutes_min'])
+        if criteres:  # un seul filtre : tous les critères portent sur la même ligne de statistiques
+            saison = Saison.courante()
+            qs = qs.filter(pk__in=StatistiqueJoueur.objects.filter(saison=saison, **criteres).values('joueur_id'))
+        return qs
 
     def update(self, request, *args, **kwargs):
         exiger_role(request, Role.ADMIN, Role.ANALYSTE, Role.CLUB_ADMIN)  # le scout crée un joueur mais ne le modifie pas

@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { estHls, useHls } from '../lib/hls';
 import { Link, useParams } from 'react-router-dom';
 import { ErreurApi, api, nouvelleCle } from '../lib/api';
-import { TYPES_ACTION } from '../lib/format';
+import { QUALIFICATIFS, TYPES_ACTION } from '../lib/format';
 import { useChargement, useIntervalle } from '../lib/hooks';
 import { H, L, Terrain } from '../components/Terrain';
 import { Alerte, Badge, Bouton, Card, Chargement, Titre } from '../components/ui';
@@ -11,7 +11,7 @@ const PARTIES: [string, string][] = [['PIED_D', 'Pied droit'], ['PIED_G', 'Pied 
 const AVEC_ARRIVEE = ['PASSE', 'CENTRE'];
 const SANS_TERRAIN = ['REMPLACEMENT']; // le lieu n'a pas de sens pour un changement de joueur
 
-interface Saisie { cle_idempotence: string; match: number; joueur: number; joueur_lie?: number; type_action: string; minute: number; temps_video: number; zone_x: number; zone_y: number; fin_x?: number; fin_y?: number; resultat: boolean; partie_corps?: string }
+interface Saisie { cle_idempotence: string; match: number; joueur: number; joueur_lie?: number; type_action: string; minute: number; temps_video: number; zone_x: number; zone_y: number; fin_x?: number; fin_y?: number; resultat: boolean; partie_corps?: string; qualificatifs?: string[] }
 const fileLocale = (id: string | undefined) => `syscout.codage.${id}`;
 const lire = (id: string | undefined): Saisie[] => { try { return JSON.parse(localStorage.getItem(fileLocale(id)) || '[]'); } catch { return []; } };
 const ecrire = (id: string | undefined, v: Saisie[]) => { try { localStorage.setItem(fileLocale(id), JSON.stringify(v)); } catch { /* quota */ } };
@@ -27,6 +27,7 @@ export default function Codage() {
   const [type, setType] = useState('PASSE');
   const [reussie, setReussie] = useState(true);
   const [partie, setPartie] = useState('PIED_D');
+  const [details, setDetails] = useState<string[]>([]);
   const [depart, setDepart] = useState<[number, number] | null>(null);
   const [arrivee, setArrivee] = useState<[number, number] | null>(null);
   const [minuteManuelle, setMinuteManuelle] = useState('');
@@ -85,6 +86,7 @@ export default function Codage() {
       ...(type === 'REMPLACEMENT' && sortant ? { joueur_lie: sortant } : {}),
       ...(AVEC_ARRIVEE.includes(type) && arrivee ? { fin_x: arrivee[0], fin_y: arrivee[1] } : {}),
       ...(['TIR', 'BUT'].includes(type) ? { partie_corps: partie } : {}),
+      qualificatifs: details.filter((d) => QUALIFICATIFS[d].types.includes(type)),
     };
     try { await api.post('/evenements/', s); setInfo(`${TYPES_ACTION[type]} enregistrée (minute ${minute}).`); evts.recharger(); }
     catch (e) {
@@ -92,7 +94,7 @@ export default function Codage() {
         const f = [...lire(id), s]; ecrire(id, f); setAttente(f); setInfo('Réseau indisponible : saisie gardée sur cet appareil, elle sera renvoyée.');
       } else return setErreur((e as Error).message);
     }
-    setDepart(null); setArrivee(null); setSortant(null);
+    setDepart(null); setArrivee(null); setSortant(null); setDetails([]);
   };
   const supprimer = async (e: any) => { try { await api.delete(`/evenements/${e.id}/`); evts.recharger(); } catch (x) { setErreur((x as Error).message); } };
   const fermer = async () => { try { await api.post(`/matchs/${id}/fermer-codage/`); setVerrouOk(false); match.recharger(); } catch (e) { setErreur((e as Error).message); } };
@@ -135,7 +137,7 @@ export default function Codage() {
                 {[...liste].sort((a, b) => b.temps_video - a.temps_video || b.id - a.id).map((e) => (
                   <li key={e.id} className="flex items-center gap-3 py-2">
                     <span className="w-9 text-right font-bold text-slate-400">{e.minute}'</span>
-                    <span className="flex-1"><span className="font-medium text-navy">{e.type_libelle}</span> <span className="text-slate-500">{e.joueur_nom}</span></span>
+                    <span className="flex-1"><span className="font-medium text-navy">{e.type_libelle}</span> <span className="text-slate-500">{e.joueur_nom}</span>{e.qualificatifs?.length ? <span className="block text-xs text-slate-400">{e.qualificatifs.map((c: string) => QUALIFICATIFS[c]?.libelle || c).join(' · ')}</span> : null}</span>
                     {e.source === 'AI' ? <Badge ton="bleu">IA</Badge> : null}
                     <Badge ton={e.resultat ? 'vert' : 'gris'}>{e.resultat ? 'Réussie' : 'Ratée'}</Badge>
                     <button aria-label="Supprimer" className="text-slate-400 hover:text-brand-red" onClick={() => supprimer(e)}>✕</button>
@@ -157,13 +159,18 @@ export default function Codage() {
               </div>
               <div className="mb-4 flex flex-wrap gap-2">
                 {Object.entries(TYPES_ACTION).map(([k, l]) => (
-                  <button key={k} onClick={() => { setType(k); setArrivee(null); }} className={`rounded-full border px-3 py-1 text-sm font-medium ${type === k ? 'border-brand-blue bg-brand-blue text-white' : 'border-slate-300 text-slate-700'}`}>{l}</button>))}
+                  <button key={k} onClick={() => { setType(k); setArrivee(null); setDetails([]); }} className={`rounded-full border px-3 py-1 text-sm font-medium ${type === k ? 'border-brand-blue bg-brand-blue text-white' : 'border-slate-300 text-slate-700'}`}>{l}</button>))}
               </div>
               <div className="mb-4 flex flex-wrap items-center gap-4 text-sm">
                 {type !== 'BUT' ? <label className="flex items-center gap-2"><input type="checkbox" checked={reussie} onChange={(e) => setReussie(e.target.checked)} /> Réussie</label> : null}
                 {['TIR', 'BUT'].includes(type) ? (
                   <select value={partie} onChange={(e) => setPartie(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1">{PARTIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>) : null}
               </div>
+              {Object.entries(QUALIFICATIFS).some(([, q]) => q.types.includes(type)) ? (
+                <fieldset className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-sm"><legend className="mb-1 text-slate-500">Détails (facultatif)</legend>
+                  {Object.entries(QUALIFICATIFS).filter(([, q]) => q.types.includes(type)).map(([code, q]) => (
+                    <label key={code} className="flex items-center gap-2"><input type="checkbox" checked={details.includes(code)} onChange={(e) => setDetails((d) => (e.target.checked ? [...d, code] : d.filter((x) => x !== code)))} /> {q.libelle}</label>))}
+                </fieldset>) : null}
               {type === 'REMPLACEMENT' ? <p className="mb-2 text-sm text-slate-600">Joueur <b>entrant</b> : choisi ci-dessus. Joueur <b>sortant</b> :
                 <select value={sortant ?? ''} onChange={(e) => setSortant(e.target.value ? Number(e.target.value) : null)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1"><option value="">— choisir —</option>{compo.filter((c) => c.joueur !== joueur).map((c) => <option key={c.joueur} value={c.joueur}>{c.numero_maillot ? `${c.numero_maillot} · ` : ''}{c.joueur_nom}</option>)}</select></p> : null}
               <p className="mb-2 text-sm text-slate-600">{AVEC_ARRIVEE.includes(type) ? "Cliquez le point de départ, puis le point d'arrivée." : "Cliquez l'endroit de l'action."} L'équipe attaque vers la droite.</p>

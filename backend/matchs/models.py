@@ -129,6 +129,18 @@ class StatutValidation(models.TextChoices):
     UNVERIFIED = 'UNVERIFIED', 'Non vérifié'
 
 
+# détails facultatifs d'une action, cochés par l'analyste : code -> (libellé, types d'action concernés)
+QUALIFICATIFS = {
+    'PASSE_CLE': ('Passe clé', ('PASSE', 'CENTRE')),
+    'PASSE_PROFONDEUR': ('Passe en profondeur', ('PASSE',)),
+    'PASSE_INTELLIGENTE': ('Passe intelligente', ('PASSE',)),
+    'COMBINAISON_MILIEU': ('Combinaison avec le milieu', ('PASSE',)),
+    'ACCELERATION': ('Accélération', ('DRIBBLE',)),
+    'DUEL_AERIEN': ('Duel aérien', ('DUEL',)),
+    'DUEL_OFFENSIF': ('Duel offensif', ('DUEL', 'DRIBBLE')),
+    'FAUTE_PROVOQUEE': ('Faute provoquée', ('DUEL', 'DRIBBLE')),
+}
+
 PARTIES_CORPS = [('PIED_D', 'Pied droit'), ('PIED_G', 'Pied gauche'), ('TETE', 'Tête'), ('AUTRE', 'Autre')]
 
 
@@ -150,6 +162,7 @@ class Evenement(models.Model):
     resultat = models.BooleanField(default=True)  # réussi / raté
     partie_corps = models.CharField(max_length=6, choices=PARTIES, blank=True)
     valeur_xg = models.FloatField(null=True, blank=True)
+    qualificatifs = models.JSONField(default=list, blank=True, help_text='codes de QUALIFICATIFS')
     # point d'arrivée d'une passe ou d'un centre, dans le même repère que la zone (carte des passes)
     fin_x = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
     fin_y = models.FloatField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
@@ -250,7 +263,7 @@ class Annotation(models.Model):
     FORMES = [('FLECHE', 'Flèche'), ('CERCLE', 'Cercle'), ('TRAIT', 'Trait libre'), ('TEXTE', 'Texte'),
               ('ZONE', 'Zone'), ('LIGNE', 'Ligne'), ('SPOT', 'Projecteur'), ('COURBE', 'Flèche courbe'),
               ('MESURE', 'Distance'), ('CHAINE', 'Liaison entre joueurs'), ('POLY', 'Triangle ou forme'),
-              ('OVALE', 'Zone ovale'), ('JOUEUR', 'Étiquette joueur')]
+              ('OVALE', 'Zone ovale'), ('JOUEUR', 'Étiquette joueur'), ('BANDE', 'Flèche à chevrons')]
 
     match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='annotations')
     auteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='annotations')
@@ -331,3 +344,29 @@ class Playlist(models.Model):
 
     class Meta:
         ordering = ['nom', 'id']
+
+
+# phases de jeu du tableau de codage : code -> (libellé, étiquettes proposées)
+CATEGORIES_MARQUE = {
+    'ATTAQUE': ('Attaque', ('Jeu long', 'Construction', 'Côté gauche', 'Côté droit', 'Axe', 'Occasion')),
+    'DEFENSE': ('Défense', ('Bloc haut', 'Bloc médian', 'Bloc bas', 'Pressing', 'Erreur')),
+    'TRANSITION_OFF': ('Transition offensive', ('Contre-attaque', 'Conservation', 'Occasion')),
+    'TRANSITION_DEF': ('Transition défensive', ('Contre-pressing', 'Repli', 'Faute tactique')),
+    'COUP_ARRETE': ('Coup de pied arrêté', ('Corner', 'Coup franc', 'Touche', 'Penalty', 'Pour', 'Contre')),
+    'MOMENT_FORT': ('Moment fort', ('À montrer', 'À travailler')),
+}
+
+
+class MarqueVideo(models.Model):
+    """Séquence marquée par l'analyste sur la vidéo (phase de jeu et étiquettes). Aide à l'analyse : elle n'entre dans
+    aucune statistique officielle."""
+    match = models.ForeignKey(Match, on_delete=models.CASCADE, related_name='marques')
+    auteur = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='marques')
+    categorie = models.CharField(max_length=16, choices=[(c, v[0]) for c, v in CATEGORIES_MARQUE.items()])
+    etiquettes = models.JSONField(default=list, blank=True)
+    temps_video = models.PositiveIntegerField(help_text='début de la séquence, en secondes')
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['temps_video', 'id']
+        indexes = [models.Index(fields=['match', 'categorie'])]

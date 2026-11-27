@@ -27,7 +27,7 @@ Autre serveur : `VITE_API_URL=https://syscout-api.onrender.com npm run build` (v
 | `/app/matchs`, `/:id`, `/nouveau`, `/:id/modifier` | liste, fiche, formulaire avec compositions et adresse de la vidéo, correction, annulation |
 | `/app/matchs/:id/codage` | codage vidéo : verrou renouvelé, action au clic sur le terrain (passes : départ et arrivée), file locale et clé d'idempotence, validation du match |
 | `/app/matchs/:id/relecture` | vidéo, actions filtrées, playlists |
-| `/app/matchs/:id/direct` | direct en WebSocket (secours : relecture toutes les 5 s) |
+| `/app/matchs/:id/direct` | vidéo du match ou flux HLS en direct (second angle, retour au direct), chiffres en WebSocket (secours : relecture toutes les 5 s) |
 | `/app/matchs/:id/tactique` | zones, positions moyennes, formation, bloc, pressing, transitions, avertissements |
 | `/app/matchs/:id/verification-ia`, `/pistes-ia` | confirmer, corriger ou rejeter les propositions de l'IA ; heatmap et identification des pistes |
 | `/app/matchs/:id/physique` | données physiques (lecture, saisie manuelle) |
@@ -46,13 +46,21 @@ orange des étiquettes `#F28C28`, terrain vert), avec une recherche d'un joueur 
 - `/scout/matchs` (`?joueur=`, `?club=`, `?type=`, `?match=`) : liste des matchs avec vidéo, lecteur avec le score en surimpression,
   mi-temps, moments du match (buts, moments forts, listes enregistrées), capture d'écran et export CSV.
   Liste des actions par catégorie (calculées sur les événements codés), rapport vidéo lu à la suite (toutes les actions ou la
-  sélection cochée), action précédente et suivante, vitesse 1x/2x/3x, plein écran, second angle, lien partagé `?match=&t=`.
+  sélection cochée), action précédente et suivante, vitesse 1x/2x/3x, plein écran, second angle, lien partagé `?match=&t=`. Téléchargement d'une action en extrait WebM (vidéo servie par le même site seulement). Les détails
+  cochés au codage (passe clé, en profondeur, duel aérien, accélération…) forment leurs propres catégories. La page Joueurs a une
+  recherche avancée : pied fort, taille, minutes jouées et centiles minimaux par statistique.
 - `/scout/equipe/:id` : informations, bilan, vidéos, classements, derniers matchs ; onglets Effectif, Actions, Statistiques, Rapports,
   Analyse tactique.
 
 Mêmes données et mêmes droits que le reste du site (aucune API de plus).
 
 ## Fonctions ajoutées depuis l'application mobile
+
+- **Suivi automatique sur la vidéo** (`/app/matchs/:id/relecture`) : les pistes du moteur IA, replacées sur l'image après calibrage
+  (anneau, étiquette, liaisons en mètres), signalées comme non vérifiées. **Chronologie** des actions et **carte des actions**
+  (passes tracées) sur la même page.
+- **Tableau de codage** (phases de jeu et étiquettes, touches 1 à 6, export CSV), **vue tactique 2D** synchronisée avec la vidéo,
+  **contrôle de l'espace** (estimation par la distance) et dessin « flèche à chevrons ».
 
 - **Caméras** (`/app/cameras`) : création et modification (l'adresse du flux ne se relit pas : vide = inchangée), vérification,
   **calibrage des 4 coins** cliqués sur l'image de la caméra (ou saisis à la main si elle n'a pas d'adresse de lecture).

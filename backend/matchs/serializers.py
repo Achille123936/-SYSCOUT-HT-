@@ -3,7 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from core.services import calculer_xg
-from matchs.models import (Annotation, Composition, DonneePhysique, EtatMatch, Evenement, Match, PisteJoueur,
+from matchs.models import (CATEGORIES_MARQUE, MarqueVideo, QUALIFICATIFS, Annotation, Composition, DonneePhysique, EtatMatch, Evenement, Match, PisteJoueur,
                            Playlist, PropositionIA, TypeAction, ValidationEvenement)
 
 
@@ -136,7 +136,7 @@ class EvenementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Evenement
         fields = ['id', 'match', 'joueur', 'joueur_nom', 'joueur_lie', 'joueur_lie_nom', 'club', 'type_action', 'type_libelle', 'temps_video',
-                  'minute', 'zone_x', 'zone_y', 'fin_x', 'fin_y', 'resultat', 'partie_corps', 'valeur_xg',
+                  'minute', 'zone_x', 'zone_y', 'fin_x', 'fin_y', 'resultat', 'partie_corps', 'qualificatifs', 'valeur_xg',
                   'cle_idempotence', 'source', 'statut_validation', 'confiance']
         # la source et le statut ne se déclarent pas : un événement de l'IA passe par la validation d'une proposition
         read_only_fields = ['valeur_xg', 'source', 'statut_validation', 'confiance']
@@ -177,7 +177,20 @@ class EvenementSerializer(serializers.ModelSerializer):
                 data.get('fin_y', getattr(inst, 'fin_y', None)) is None):
             raise serializers.ValidationError({'fin_x': "Indiquez les deux coordonnées du point d'arrivée."})
         self._controler_type(data, inst, match, joueur, minute)
+        self._controler_qualificatifs(data, inst, type_action)
         return data
+
+    def _controler_qualificatifs(self, data, inst, type_action):
+        """Un détail doit exister et convenir au type d'action ; si le type change, les détails devenus faux sont retirés."""
+        convient = lambda code: type_action in QUALIFICATIFS.get(code, ('', ()))[1]  # noqa: E731
+        if 'qualificatifs' not in data:
+            if inst and inst.qualificatifs:
+                data['qualificatifs'] = [c for c in inst.qualificatifs if convient(c)]
+            return
+        codes = data['qualificatifs']
+        if not isinstance(codes, list) or not all(isinstance(c, str) and convient(c) for c in codes):
+            raise serializers.ValidationError({'qualificatifs': "Détail inconnu ou sans rapport avec ce type d'action."})
+        data['qualificatifs'] = sorted(set(codes))
 
     def _controler_type(self, data, inst, match, joueur, minute):
         """SRS §8.2 : un arrêt est celui d'un gardien ; un remplacement nomme le joueur entrant et le sortant."""
@@ -297,7 +310,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
     # nombre de points attendu par forme (minimum, maximum)
     NB_POINTS = {'FLECHE': (2, 2), 'CERCLE': (2, 2), 'ZONE': (2, 2), 'LIGNE': (2, 2), 'SPOT': (2, 2),
                  'MESURE': (2, 2), 'OVALE': (2, 2), 'COURBE': (3, 3), 'TEXTE': (1, 1), 'JOUEUR': (1, 1),
-                 'TRAIT': (2, 400), 'CHAINE': (2, 12), 'POLY': (3, 12)}
+                 'TRAIT': (2, 400), 'CHAINE': (2, 12), 'POLY': (3, 12), 'BANDE': (2, 2)}
     MESUREES = ('MESURE', 'CHAINE', 'POLY')
 
     auteur_nom = serializers.CharField(source='auteur.nom_complet', read_only=True)
@@ -385,3 +398,25 @@ class PlaylistSerializer(serializers.ModelSerializer):
         if not isinstance(filtres, dict) or set(filtres) - {'type', 'equipe', 'joueur', 'resultat', 'categorie'}:
             raise serializers.ValidationError('Critères inconnus.')
         return filtres
+
+
+class MarqueVideoSerializer(serializers.ModelSerializer):
+    auteur_nom = serializers.CharField(source='auteur.nom_complet', read_only=True)
+
+    class Meta:
+        model = MarqueVideo
+        fields = ['id', 'match', 'auteur', 'auteur_nom', 'categorie', 'etiquettes', 'temps_video', 'date_creation']
+        read_only_fields = ['auteur']
+
+    def validate(self, data):
+        inst = self.instance
+        if inst and 'match' in data and data['match'] != inst.match:
+            raise serializers.ValidationError({'match': 'Une séquence ne change pas de match.'})
+        categorie = data.get('categorie', getattr(inst, 'categorie', None))
+        etiquettes = data.get('etiquettes', getattr(inst, 'etiquettes', []))
+        permises = CATEGORIES_MARQUE[categorie][1]
+        if not isinstance(etiquettes, list) or not all(isinstance(t, str) and t in permises for t in etiquettes):
+            raise serializers.ValidationError({'etiquettes': 'Étiquette inconnue pour cette phase de jeu.'})
+        data['etiquettes'] = [t for t in permises if t in etiquettes]
+        return data
+
