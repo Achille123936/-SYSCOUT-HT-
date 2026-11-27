@@ -42,11 +42,11 @@ Trois écrans à l'aspect d'une plateforme de scouting vidéo (fond gris très c
 orange des étiquettes `#F28C28`, terrain vert), avec une recherche d'un joueur ou d'une équipe en haut de page :
 
 - `/scout/joueur/:id` : informations, statistiques (disque des actions, position moyenne sur le terrain), vidéos par type d'action,
-  compétitions, derniers matchs ; onglets Events, Stats, Career, Reports, Scouting.
+  compétitions, derniers matchs ; onglets Actions, Statistiques, Carrière, Rapports, Scouting.
 - `/scout/matchs` (`?joueur=`, `?club=`, `?type=`, `?match=`) : liste des matchs avec vidéo, lecteur avec le score en surimpression,
   mi-temps, moments du match (buts, moments forts, listes enregistrées), capture d'écran et export CSV.
-- `/scout/equipe/:id` : informations, bilan, vidéos, classements, derniers matchs ; onglets Squad, Events, Stats, Reports,
-  Team assessments (analyse tactique).
+- `/scout/equipe/:id` : informations, bilan, vidéos, classements, derniers matchs ; onglets Effectif, Actions, Statistiques, Rapports,
+  Analyse tactique.
 
 Mêmes données et mêmes droits que le reste du site (aucune API de plus).
 

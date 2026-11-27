@@ -45,9 +45,9 @@ export default function ScoutJoueur() {
   const matchs: any[] = journal.donnees?.matchs || [];
   const base = `/scout/joueur/${id}`;
   const onglets = [
-    { id: 'overview', libelle: 'Overview', vers: base }, { id: 'matchs', libelle: 'Full matches', vers: `/scout/matchs?joueur=${id}` },
-    { id: 'evenements', libelle: 'Events', vers: `${base}?onglet=evenements` }, { id: 'stats', libelle: 'Stats', vers: `${base}?onglet=stats` },
-    { id: 'carriere', libelle: 'Career', vers: `${base}?onglet=carriere` }, { id: 'rapports', libelle: 'Reports', vers: `${base}?onglet=rapports` },
+    { id: 'overview', libelle: 'Aperçu', vers: base }, { id: 'matchs', libelle: 'Matchs complets', vers: `/scout/matchs?joueur=${id}` },
+    { id: 'evenements', libelle: 'Actions', vers: `${base}?onglet=evenements` }, { id: 'stats', libelle: 'Statistiques', vers: `${base}?onglet=stats` },
+    { id: 'carriere', libelle: 'Carrière', vers: `${base}?onglet=carriere` }, { id: 'rapports', libelle: 'Rapports', vers: `${base}?onglet=rapports` },
     { id: 'scouting', libelle: 'Scouting', vers: `${base}?onglet=scouting` },
   ];
 

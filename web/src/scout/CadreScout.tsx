@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { api, type Page } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import Pied from '../components/Pied';
 import { Chargement } from '../components/ui';
 
 interface Resultat { type: 'joueur' | 'equipe'; id: number; nom: string; detail: string }
@@ -65,6 +66,7 @@ export default function CadreScout() {
         </div>
       </header>
       <Outlet />
+      <Pied />
     </div>
   );
 }

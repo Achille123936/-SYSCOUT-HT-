@@ -30,10 +30,10 @@ export default function ScoutEquipe() {
   const e = equipe.donnees, c = club.donnees, b = e.bilan;
   const base = `/scout/equipe/${id}`;
   const onglets = [
-    { id: 'overview', libelle: 'Overview', vers: base }, { id: 'matchs', libelle: 'Full matches', vers: `/scout/matchs?club=${id}` },
-    { id: 'effectif', libelle: 'Squad', vers: `${base}?onglet=effectif` }, { id: 'evenements', libelle: 'Events', vers: `${base}?onglet=evenements` },
-    { id: 'stats', libelle: 'Stats', vers: `${base}?onglet=stats` }, { id: 'rapports', libelle: 'Reports', vers: `${base}?onglet=rapports` },
-    { id: 'tactique', libelle: 'Team assessments', vers: `${base}?onglet=tactique` },
+    { id: 'overview', libelle: 'Aperçu', vers: base }, { id: 'matchs', libelle: 'Matchs complets', vers: `/scout/matchs?club=${id}` },
+    { id: 'effectif', libelle: 'Effectif', vers: `${base}?onglet=effectif` }, { id: 'evenements', libelle: 'Actions', vers: `${base}?onglet=evenements` },
+    { id: 'stats', libelle: 'Statistiques', vers: `${base}?onglet=stats` }, { id: 'rapports', libelle: 'Rapports', vers: `${base}?onglet=rapports` },
+    { id: 'tactique', libelle: 'Analyse tactique', vers: `${base}?onglet=tactique` },
   ];
   const avecVideo = (matchs.donnees || []).filter((m) => m.video_lecture);
   const parts = [{ nom: 'Victoires', valeur: b.victoires, couleur: '#6AB04C' }, { nom: 'Nuls', valeur: b.nuls, couleur: '#9AA3AA' }, { nom: 'Défaites', valeur: b.defaites, couleur: '#E04B3E' }];
