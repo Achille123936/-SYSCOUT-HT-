@@ -27,7 +27,7 @@ une question présente dans le corpus). Cet adaptateur **ne doit pas servir à r
 
 ## Limites
 
-- **Rien n'a été entraîné ici** : le script d'entraînement n'a pas été exécuté et la qualité du modèle n'est pas mesurée.
+- La qualité n'est mesurée que par la perte de validation et quelques essais manuels : pas d'évaluation systématique.
 - Les réponses du corpus viennent de règles fixes : le modèle apprend un style, pas de nouvelles connaissances. Donnez-lui
   toujours les chiffres en `--contexte` : sans eux, il peut inventer.
 - **Créole** : le corpus est en français. Pour le créole, ajoutez un corpus rédigé ou relu par des locuteurs (même format
