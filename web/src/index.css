@@ -4,6 +4,7 @@
 
 html, body, #root { min-height: 100%; }
 body { @apply bg-slate-50 font-sans text-slate-800 antialiased; }
+:root { --wy-bleu: #007ABF; --wy-fond: #F4F5F6; --wy-bord: #D9DCDF; --wy-texte: #333333; --wy-doux: #6B7278; }
 
 /* Espace connecté : densité et couleurs de l'interface « Scout », appliquées aux classes déjà utilisées par les pages */
 .dense :is(.rounded-2xl, .rounded-xl, .rounded-lg) { border-radius: 3px; }
@@ -14,3 +15,28 @@ body { @apply bg-slate-50 font-sans text-slate-800 antialiased; }
 .dense .text-brand-blue { color: theme('colors.wy.bleu'); }
 .dense .bg-brand-blue { background-color: theme('colors.wy.azur'); }
 .dense .border-brand-blue { border-color: theme('colors.wy.azur'); }
+
+/* Thème sombre de l'espace connecté et de l'interface Scout : fond anthracite, panneaux gris foncé, azur.
+   Les classes claires déjà utilisées par les pages sont redéfinies ici, sous « .sombre » seulement. */
+.sombre { --wy-bleu: #00AAFF; --wy-fond: #252628; --wy-bord: #45474A; --wy-texte: #FFFFFF; --wy-doux: #A7ACB1; color-scheme: dark; color: #fff; }
+.sombre :is(.bg-white, .bg-white\/95) { background-color: #323436; }
+.sombre :is(.bg-slate-50, .bg-slate-100), .sombre :is(.hover\:bg-slate-50, .hover\:bg-slate-100, .hover\:bg-blue-50, .hover\:bg-wy-fond):hover { background-color: #2A2B2C; }
+.sombre :is(.bg-slate-200, .bg-slate-300) { background-color: #55585C; }
+.sombre :is(.text-navy, .text-slate-800, .text-slate-700), .sombre .hover\:text-navy:hover { color: #FFFFFF; }
+.sombre .text-slate-600 { color: #D3D6D9; }
+.sombre :is(.text-slate-500, .text-slate-400) { color: #A7ACB1; }
+.sombre :is(.border-slate-100, .border-slate-200, .border-slate-300), .sombre .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #45474A; }
+.sombre :is(.border-navy, .hover\:border-slate-300:hover, .hover\:border-navy:hover) { border-color: #00AAFF; }
+.sombre .bg-blue-50 { background-color: rgb(0 170 255 / 0.16); }
+.sombre :is(.text-blue-700, .text-blue-900) { color: #7FD4FF; }
+.sombre .border-blue-200 { border-color: #0B5A80; }
+.sombre .bg-amber-50 { background-color: #323400; }
+.sombre :is(.text-amber-700, .text-amber-900) { color: #F5D90A; }
+.sombre .border-amber-200 { border-color: #5C5A10; }
+.sombre .bg-red-50 { background-color: rgb(229 72 77 / 0.18); }
+.sombre :is(.text-red-600, .text-red-700, .text-red-900) { color: #FF9A9D; }
+.sombre .border-red-200 { border-color: #7A2F32; }
+.sombre .bg-emerald-50 { background-color: rgb(32 181 107 / 0.18); }
+.sombre :is(.text-emerald-600, .text-emerald-700, .text-emerald-900) { color: #6FE3A8; }
+.sombre .border-emerald-200 { border-color: #1D6B46; }
+.sombre :is(input:not([type=checkbox], [type=radio], [type=range], [type=color]), select, textarea) { background-color: #2A2B2C; color: #FFFFFF; }

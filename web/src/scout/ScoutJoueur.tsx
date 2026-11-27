@@ -142,7 +142,7 @@ export default function ScoutJoueur() {
 
         {onglet === 'stats' ? (
           <div className="grid gap-4 lg:grid-cols-2">
-            <Panneau titre="Radar des centiles"><Radar series={[{ nom: j.nom_complet, couleur: '#29ABE2', centiles: s?.centiles }]} /></Panneau>
+            <Panneau titre="Radar des centiles"><Radar series={[{ nom: j.nom_complet, couleur: '#00AAFF', centiles: s?.centiles }]} /></Panneau>
             <Panneau titre="Statistiques de la saison">
               {s ? <dl className="text-[13px]">{LIGNES_STATS.map(([cle, nom, unite]) => <div key={cle} className="flex justify-between border-b border-wy-bord py-1.5"><dt className="text-wy-doux">{nom}</dt><dd className="font-semibold">{nombre(s[cle], unite)}</dd></div>)}</dl>
                 : <p className="text-[13px] text-wy-doux">Aucune statistique publiée.</p>}

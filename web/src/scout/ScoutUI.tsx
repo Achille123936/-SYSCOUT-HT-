@@ -27,7 +27,7 @@ export function Onglets({ onglets, actif }: { onglets: { id: string; libelle: st
     <nav className="flex flex-wrap gap-1 border-b border-wy-azur px-4" aria-label="Onglets">
       {onglets.map((o) => (
         <Link key={o.id} to={o.vers} aria-current={o.id === actif ? 'page' : undefined}
-          className={`border border-b-0 px-5 py-1.5 text-[13px] ${o.id === actif ? 'border-wy-azur bg-wy-azur font-semibold text-white' : 'border-wy-bord bg-white text-wy-texte hover:bg-slate-50'}`}>{o.libelle}</Link>
+          className={`border border-b-0 px-5 py-1.5 text-[13px] ${o.id === actif ? 'border-wy-azur bg-[#323400] font-semibold text-[#F5D90A]' : 'border-wy-bord bg-white text-wy-texte hover:bg-slate-50'}`}>{o.libelle}</Link>
       ))}
     </nav>
   );
@@ -61,8 +61,8 @@ export function TerrainVert({ points = [], moyenne }: { points?: { x: number; y:
       <circle cx={L / 2} cy={H / 2} r={9.15} {...t} /><circle cx={L / 2} cy={H / 2} r={0.5} fill="#fff" />
       <rect x={0.5} y={(H - 40.3) / 2} width={16.5} height={40.3} {...t} /><rect x={L - 17} y={(H - 40.3) / 2} width={16.5} height={40.3} {...t} />
       <rect x={0.5} y={(H - 18.3) / 2} width={5.5} height={18.3} {...t} /><rect x={L - 6} y={(H - 18.3) / 2} width={5.5} height={18.3} {...t} />
-      {points.slice(0, 400).map((p, i) => <circle key={i} cx={(p.x / 100) * L} cy={(p.y / 100) * H} r={0.9} fill="#29ABE2" fillOpacity={0.55} />)}
-      {moyenne ? <circle cx={(moyenne.x / 100) * L} cy={(moyenne.y / 100) * H} r={2.6} fill="#fff" stroke="#1F8FD0" strokeWidth={0.8} /> : null}
+      {points.slice(0, 400).map((p, i) => <circle key={i} cx={(p.x / 100) * L} cy={(p.y / 100) * H} r={0.9} fill="#00AAFF" fillOpacity={0.55} />)}
+      {moyenne ? <circle cx={(moyenne.x / 100) * L} cy={(moyenne.y / 100) * H} r={2.6} fill="#fff" stroke="#00AAFF" strokeWidth={0.8} /> : null}
     </svg>
   );
 }

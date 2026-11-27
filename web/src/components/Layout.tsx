@@ -33,7 +33,7 @@ export default function Layout() {
   ));
 
   return (
-    <div className="flex min-h-screen flex-col bg-wy-fond font-sans text-wy-texte">
+    <div className="sombre flex min-h-screen flex-col bg-wy-fond font-sans text-wy-texte">
       <header className="sticky top-0 z-40 border-b border-wy-bord bg-white">
         <div className="flex h-12 items-center gap-4 px-4">
           <button className="border border-wy-bord px-2 py-1 text-[13px] lg:hidden" onClick={() => setMobile(!mobile)} aria-expanded={mobile} aria-label="Menu">☰</button>

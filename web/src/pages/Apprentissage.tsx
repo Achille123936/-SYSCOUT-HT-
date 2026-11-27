@@ -14,8 +14,8 @@ function CourbeCalibration({ tranches }: { tranches: { xg_moyen: number; frequen
     <svg viewBox="0 0 100 100" className="w-full max-w-xs" role="img" aria-label="Courbe de calibration du modèle xG">
       <rect x={10} y={10} width={80} height={80} fill="none" stroke="#cbd5e1" strokeWidth={0.5} />
       <line x1={X(0)} y1={Y(0)} x2={X(max)} y2={Y(max)} stroke="#94a3b8" strokeDasharray="2 2" strokeWidth={0.5} />
-      <polyline fill="none" stroke="#0f2a4a" strokeWidth={1} points={tranches.map((t) => `${X(t.xg_moyen)},${Y(t.frequence)}`).join(' ')} />
-      {tranches.map((t) => <circle key={t.xg_moyen} cx={X(t.xg_moyen)} cy={Y(t.frequence)} r={1.6} fill="#0f2a4a"><title>{`xG ${t.xg_moyen} · observé ${t.frequence} · ${t.tirs} tirs`}</title></circle>)}
+      <polyline fill="none" stroke="#00AAFF" strokeWidth={1} points={tranches.map((t) => `${X(t.xg_moyen)},${Y(t.frequence)}`).join(' ')} />
+      {tranches.map((t) => <circle key={t.xg_moyen} cx={X(t.xg_moyen)} cy={Y(t.frequence)} r={1.6} fill="#00AAFF"><title>{`xG ${t.xg_moyen} · observé ${t.frequence} · ${t.tirs} tirs`}</title></circle>)}
       <text x={50} y={98} fontSize="4" textAnchor="middle" fill="#64748b">xG prédit</text>
       <text x={3} y={50} fontSize="4" textAnchor="middle" fill="#64748b" transform="rotate(-90 3 50)">Fréquence observée</text>
     </svg>

@@ -42,12 +42,12 @@ export default function CadreScout() {
 
   const aller = (r: Resultat) => { setOuvert(false); setQ(''); navigate(r.type === 'joueur' ? `/scout/joueur/${r.id}` : `/scout/equipe/${r.id}`); };
   return (
-    <div className="min-h-screen bg-wy-fond font-sans text-wy-texte">
+    <div className="sombre dense min-h-screen bg-wy-fond font-sans text-wy-texte">
       <header className="border-b border-wy-bord bg-white">
         <div className="mx-auto flex h-12 max-w-[1400px] items-center gap-4 px-4">
           <Link to="/scout" className="text-[22px] font-extrabold leading-none tracking-tight text-wy-texte">syscout<span className="text-wy-azur">·</span></Link>
           <div ref={boite} className="relative w-full max-w-xs">
-            <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => resultats.length && setOuvert(true)} placeholder="Enter a Player or a Team"
+            <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => resultats.length && setOuvert(true)} placeholder="Rechercher un joueur ou une équipe"
               aria-label="Rechercher un joueur ou une équipe" className="w-full border border-wy-bord bg-white py-1.5 pl-3 pr-3 text-[13px] outline-none focus:border-wy-azur" />
             {ouvert && resultats.length ? (
               <ul className="absolute left-0 right-0 top-full z-50 border border-wy-bord bg-white shadow-lg" role="listbox">
