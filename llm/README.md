@@ -17,6 +17,14 @@ python entrainer_lora.py --modele Qwen/Qwen2.5-0.5B-Instruct --corpus corpus.jso
 python generer.py "Résume le profil statistique de Joueur 1 pour un entraîneur." --contexte "..."
 ```
 
+## Résultat mesuré (à lire avant tout usage)
+
+Un essai a été fait sur CPU (Qwen2.5-0.5B, 3 époques, 228 exemples dont 58 connaissances de football). Perte de validation
+0,59, et **les réponses de football sont fausses** (« hors-jeu » et « faux neuf » expliqués de façon inventée, même pour
+une question présente dans le corpus). Cet adaptateur **ne doit pas servir à répondre sur le football**. Ce pipeline sert
+à formuler des chiffres donnés en contexte ; pour « comprendre » le football, utilisez l'assistant IA du site
+(`backend/assistant`, API Claude + recherche documentaire), qui cite ses sources.
+
 ## Limites
 
 - **Rien n'a été entraîné ici** : le script d'entraînement n'a pas été exécuté et la qualité du modèle n'est pas mesurée.

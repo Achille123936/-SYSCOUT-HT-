@@ -76,7 +76,7 @@ def passages():
                      f"({_nombre(MATCHS['Arabie saoudite']['xg'][0])}) et le plus faible contre la France "
                      f"({_nombre(MATCHS['France']['xg'][0])}). Haïti a parcouru entre 107,5 et 110,7 km par match, "
                      f"un peu moins que ses adversaires. Source : {SOURCE}."))
-    return resultat
+    return resultat + passages_coupe_du_monde()
 
 
 def exemples():
@@ -92,4 +92,68 @@ def exemples():
             sortie.append({'instruction': f'{libelle} dans Haïti – {adv} (U-17, Qatar 2026) ?', 'entree': '',
                            'sortie': f'Haïti {_nombre(h)}, {adv} {_nombre(a)} (source : analyse FIFA vue dans un direct, '
                                      "non vérifiée)."})
+    return sortie + exemples_coupe_du_monde()
+
+
+# ---------------------------------------------------------------- Coupe du monde 2026 (adultes), site tiers
+SOURCE_CM = ("page « FIFA World Cup 2026 » d'un site tiers, attribuée au FIFA Training Centre (Post-Match Summary), "
+             "chiffres transcrits à la main depuis des captures d'écran partielles et non vérifiés")
+
+# (équipe, matchs joués, distance/match en km, possession %, xG/match, tirs/match, précision des passes %, percées de lignes/match)
+EQUIPES_CM = [
+    ('Allemagne', 4, 127.2, 56.0, 2.16, 18.5, 90, 133.3),
+    ('Australie', 4, 123.5, 34.7, 0.68, 10.5, 80, 82.0),
+    ('Belgique', 6, 123.2, 45.7, 1.77, 18.7, 85, 102.0),
+    ('Sénégal', 4, 123.2, 49.4, 1.81, 17.0, 88, 111.0),
+    ('Norvège', 6, 122.3, 48.9, 1.66, 10.8, 87, 97.8),
+    ('Suisse', 6, 121.4, 48.5, 1.60, 12.3, 86, 107.5),
+]
+
+# (équipe déduite des joueurs, numéro, nom, distance en km, vitesse maximale en km/h) : un match non identifié sur la capture
+JOUEURS_CM = [
+    ('France', 10, 'Kylian Mbappé', 8.7, 35.3), ('France', 11, 'Michael Olise', 8.7, 28.4),
+    ('France', 12, 'Bradley Barcola', 6.1, 33.9), ('France', 14, 'Adrien Rabiot', 5.3, 29.3),
+    ('France', 17, 'William Saliba', 2.4, 26.3), ('France', 6, 'Manu Koné', 6.0, 30.3),
+    ('France', 19, 'Théo Hernandez', 2.7, 33.0), ('France', 20, 'Désiré Doué', 4.4, 27.9),
+    ('France', 24, 'Rayan Cherki', 3.3, 27.2), ('France', 26, 'Maxence Lacroix', 7.9, 31.7),
+    ('Espagne', 16, 'Rodri', 12.6, 30.6), ('Espagne', 19, 'Lamine Yamal', 9.5, 32.9),
+    ('Espagne', 21, 'Mikel Oyarzabal', 8.3, 29.5), ('Espagne', 22, 'Pau Cubarsí', 10.2, 32.4),
+    ('Espagne', 24, 'Marc Cucurella', 10.1, 30.2), ('Espagne', 5, 'Marcos Llorente', 1.7, 25.2),
+    ('Espagne', 6, 'Mikel Merino', 2.7, 25.2), ('Espagne', 7, 'Ferran Torres', 2.7, 30.6),
+    ('Espagne', 17, 'Nico Williams', 1.7, 31.4), ('Espagne', 20, 'Pedri', 2.7, 27.8),
+]
+AVERTISSEMENT_JOUEURS = ("La capture ne dit pas de quel match il s'agit ni combien de minutes chaque joueur a jouées : "
+                         "une petite distance peut venir d'un temps de jeu court.")
+
+
+def _fiche_equipe(t):
+    nom, m, dist, poss, xg, tirs, passes, percees = t
+    return (f'{nom} à la Coupe du monde 2026 ({m} matchs) : distance {_nombre(dist)} km par match, possession '
+            f'{_nombre(poss)} %, xG {_nombre(xg)} par match, {_nombre(tirs)} tirs par match, précision des passes '
+            f'{passes} %, {_nombre(percees)} percées de lignes par match. Source : {SOURCE_CM}.')
+
+
+def _fiche_joueur(j):
+    equipe, numero, nom, km, vitesse = j
+    km, vitesse = f'{km:.1f}'.replace('.', ','), f'{vitesse:.1f}'.replace('.', ',')
+    return (f'{nom} ({equipe}, n°{numero}) : {km} km parcourus, vitesse maximale {vitesse} km/h '
+            f'dans un match non identifié de la Coupe du monde 2026. {AVERTISSEMENT_JOUEURS} Source : {SOURCE_CM}.')
+
+
+def passages_coupe_du_monde():
+    resultat = [(f'C{i}', f"{t[0]} – statistiques d'équipe, Coupe du monde 2026", _fiche_equipe(t))
+                for i, t in enumerate(EQUIPES_CM, 1)]
+    resultat += [(f'P{i}', f'{j[2]} – distance et vitesse, Coupe du monde 2026', _fiche_joueur(j))
+                 for i, j in enumerate(JOUEURS_CM, 1)]
+    return resultat
+
+
+def exemples_coupe_du_monde():
+    sortie = []
+    for t in EQUIPES_CM:
+        sortie.append({'instruction': f'Donne les statistiques de {t[0]} à la Coupe du monde 2026.', 'entree': '',
+                       'sortie': _fiche_equipe(t)})
+    for j in JOUEURS_CM:
+        sortie.append({'instruction': f'Quelle distance et quelle vitesse maximale pour {j[2]} ?', 'entree': '',
+                       'sortie': _fiche_joueur(j)})
     return sortie

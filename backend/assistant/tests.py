@@ -55,6 +55,16 @@ class DonneesExternesTests(Base):
         trouves = classer("statistiques Haïti U-17 contre l'Uruguay", rag.passages_connaissances())
         self.assertTrue(any('Uruguay' in p.titre for p in trouves))
 
+    def test_coupe_du_monde(self):
+        from . import donnees_externes as d
+        self.assertEqual(len(d.EQUIPES_CM), 6)
+        self.assertEqual(len(d.JOUEURS_CM), 20)
+        self.assertIn('8,7 km', d._fiche_joueur(d.JOUEURS_CM[0]))       # Mbappé : 8,7 km, 35,3 km/h
+        self.assertIn('35,3 km/h', d._fiche_joueur(d.JOUEURS_CM[0]))
+        self.assertIn('non vérifiés', d._fiche_equipe(d.EQUIPES_CM[0]))
+        trouves = classer('distance de Mbappé', rag.passages_connaissances())
+        self.assertTrue(any('Mbapp' in p.titre for p in trouves))
+
     def test_aucun_score_invente(self):
         from . import donnees_externes as d
         texte = ' '.join(p[2] for p in d.passages())
