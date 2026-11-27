@@ -38,7 +38,7 @@ export default function CadreScout() {
   }, []);
 
   if (!pret) return <div className="p-10"><Chargement /></div>;
-  if (!utilisateur) return <Navigate to="/connexion" replace state={{ de: lieu.pathname }} />;
+  if (!utilisateur) return <Navigate to="/connexion" replace state={{ de: lieu.pathname + lieu.search }} />;
 
   const aller = (r: Resultat) => { setOuvert(false); setQ(''); navigate(r.type === 'joueur' ? `/scout/joueur/${r.id}` : `/scout/equipe/${r.id}`); };
   return (

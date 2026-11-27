@@ -382,6 +382,6 @@ class PlaylistSerializer(serializers.ModelSerializer):
         read_only_fields = ['auteur']
 
     def validate_filtres(self, filtres):
-        if not isinstance(filtres, dict) or set(filtres) - {'type', 'equipe', 'joueur', 'resultat'}:
+        if not isinstance(filtres, dict) or set(filtres) - {'type', 'equipe', 'joueur', 'resultat', 'categorie'}:
             raise serializers.ValidationError('Critères inconnus.')
         return filtres

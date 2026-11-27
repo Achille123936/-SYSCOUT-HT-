@@ -45,6 +45,8 @@ orange des étiquettes `#F28C28`, terrain vert), avec une recherche d'un joueur 
   compétitions, derniers matchs ; onglets Actions, Statistiques, Carrière, Rapports, Scouting.
 - `/scout/matchs` (`?joueur=`, `?club=`, `?type=`, `?match=`) : liste des matchs avec vidéo, lecteur avec le score en surimpression,
   mi-temps, moments du match (buts, moments forts, listes enregistrées), capture d'écran et export CSV.
+  Liste des actions par catégorie (calculées sur les événements codés), rapport vidéo lu à la suite (toutes les actions ou la
+  sélection cochée), action précédente et suivante, vitesse 1x/2x/3x, plein écran, second angle, lien partagé `?match=&t=`.
 - `/scout/equipe/:id` : informations, bilan, vidéos, classements, derniers matchs ; onglets Effectif, Actions, Statistiques, Rapports,
   Analyse tactique.
 
